@@ -1,0 +1,4 @@
+name: STAT 305 Lab Assignment
+description: >
+  Interactive lab assignment using `learnr`.
+create_dir: true

@@ -1,0 +1,47 @@
+---
+title: "Lab"
+tutorial:
+  id: my.tutorial.id
+  version: 0.1
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# Load the packages
+library(learnr)
+library(stat305templates)
+knitr::opts_chunk$set(echo = FALSE)
+# Setup safe evaluation.
+enable_safe_eval()
+# Setup the PostgreSQL event store.
+setup_psql_event_store(ignore_errors = TRUE)
+
+```
+```{r, context="server"}
+# Start a user session
+start_user_session(appid = 'stat305')
+```
+<!-- Inject shinyjs into the document. Must appear after `start_user_session` -->
+<script src="shinyjs/inject.js"></script>
+
+# Lab
+
+## Lab Group
+
+```{r labgroup}
+quiz(caption = NULL,
+     question("Group Number:
+              <span class='text-muted' style='display:block;'>Example: <em>C4</em> if you are group number 4 in lab section <em>L2C</em></span>",
+              allow_retry = TRUE, type = 'learnr_text',
+              answer(paste(sample.int(2^30, 3), sep = '%%'), correct = TRUE), # a random unpredictable "correct" answer.
+              incorrect = NULL, try_again = NULL, try_again_button = 'Change'),
+     question("Group Members (names and student ID numbers):
+              <span class='text-muted' style='display:block;'>Example: <em>David (12345678), Menglin (87654321)</em></span>",
+              allow_retry = TRUE, type = 'learnr_text',
+              answer(paste(sample.int(2^30, 3), sep = '%%'), correct = TRUE), # a random unpredictable "correct" answer.
+              incorrect = NULL, try_again = NULL, try_again_button = 'Change'))
+```
+
+## Part 1
+

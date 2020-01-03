@@ -1,5 +1,8 @@
 ---
 title: "Self Assessment"
+tutorial:
+  id: my.tutorial.self_assessment
+  version: 0.1
 output: learnr::tutorial
 runtime: shiny_prerendered
 ---
