@@ -1,0 +1,22 @@
+---
+title: "Self Assessment"
+output: learnr::tutorial
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# Load the packages
+library(learnr)
+library(stat305templates)
+knitr::opts_chunk$set(echo = FALSE)
+# Setup safe evaluation.
+enable_safe_eval()
+# Setup the PostgreSQL event store.
+setup_psql_event_store(ignore_errors = FALSE)
+```
+```{r, context="server"}
+# Start a user session
+start_user_session(appid = 'myapp')
+```
+<!-- Inject shinyjs into the document. Must appear after `start_user_session` -->
+<script src="shinyjs/inject.js"></script>

@@ -1,0 +1,4 @@
+name: STAT 305 Self Assessment
+description: > 
+  Self assessment using `learnr` featuring an interactive tutorial containing figures, videos, R exercises and quiz questions.
+create_dir: true
