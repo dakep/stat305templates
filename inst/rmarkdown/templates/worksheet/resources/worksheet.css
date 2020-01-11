@@ -1,0 +1,140 @@
+/*--------------------------------------------------------
+ * Section setup
+ * Hide the overview and increase font size!
+ --------------------------------------------------------*/
+.band {
+  padding: 2%;
+}
+
+.bandContent.page {
+  max-width: none;
+}
+
+.topicsContainer {
+  display: none;
+}
+
+.topics {
+  width: 100%;
+  font-size: 3rem;
+  counter-reset: clicker-question;
+}
+
+.topics .tutorialTitle,
+.topics h1 {
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.topics h2 {
+  font-size: 5rem;
+  font-weight: normal;
+  margin-top: 0;
+}
+
+/*--------------------------------------------------------
+ * Clicker-question sections
+ --------------------------------------------------------*/
+.clicker {
+  break-inside: avoid;
+}
+
+.show-clicker[aria-expanded="true"] {
+  display: none;
+}
+
+.clicker h3:before {
+  padding-right: 0.42em;
+  content: "Clicker Question:";
+}
+
+.clicker ol {
+  counter-reset: clicker-answers;
+}
+
+.clicker ol > li {
+  list-style-type: none;
+  padding: 0.1em 2em 0;
+  text-indent: -2em;
+  counter-increment: clicker-answers;
+}
+
+.clicker ol > li:before {
+  display: inline-block;
+  width: 1.25em;
+  padding-right: 0.42em;
+  font-weight: bold;
+  font-size: 1.2em;
+  text-align: right;
+  content: counter(clicker-answers, upper-alpha) ".";
+}
+
+/*--------------------------------------------------------
+ * Copyright
+ --------------------------------------------------------*/
+.copyright {
+  display: none;
+}
+
+
+/*--------------------------------------------------------
+ * Print styles (i.e., hide everything except the clicker questions and show copyright notice)
+ --------------------------------------------------------*/
+@media only print {
+.topics {
+  width: 100%;
+  font-size: 1rem;
+}
+.topics .tutorialTitle,
+.topics h1,
+.topics h2 {
+  font-size: 2rem;
+  display: block;
+}
+
+.topics .section.level2 {
+  display: block;
+  margin-bottom: 40px;
+}
+
+.copyright {
+  display: block;
+  position: fixed;
+  bottom: 0;
+  font-size: 0.8rem;
+  text-align: center;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  left: 0;
+}
+
+.topicActions {
+  display: none;
+}
+
+.section.level2 > * {
+  display: none;
+}
+
+.section.level2 > .clicker {
+  display: block;
+}
+
+.section.level2 > .clicker.class-only {
+  display: none;
+}
+
+.lecture {
+  display: none;
+}
+
+.clicker h3 {
+  counter-increment: clicker-question;
+}
+
+.clicker h3:before {
+  padding-right: 0.42em;
+  content: "Clicker Question " counter(clicker-question) ".";
+}
+}
