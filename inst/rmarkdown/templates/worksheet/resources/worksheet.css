@@ -18,6 +18,7 @@
   width: 100%;
   font-size: 3rem;
   counter-reset: clicker-question;
+  padding-bottom: 0;
 }
 
 .topics .tutorialTitle,
@@ -30,6 +31,12 @@
   font-size: 5rem;
   font-weight: normal;
   margin-top: 0;
+}
+
+.topicActions {
+  position: fixed;
+  top: 0;
+  right: 0;
 }
 
 /*--------------------------------------------------------
@@ -85,6 +92,7 @@
   width: 100%;
   font-size: 1rem;
 }
+
 .topics .tutorialTitle,
 .topics h1,
 .topics h2 {
@@ -117,6 +125,7 @@
   display: none;
 }
 
+.section.level2.cliker > *,
 .section.level2 > .clicker {
   display: block;
 }
@@ -129,10 +138,12 @@
   display: none;
 }
 
+.clicker h2,
 .clicker h3 {
   counter-increment: clicker-question;
 }
 
+.clicker h2:before,
 .clicker h3:before {
   padding-right: 0.42em;
   content: "Clicker Question " counter(clicker-question) ".";
