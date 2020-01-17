@@ -7,5 +7,6 @@
 worksheet(...)
 }
 \description{
-Worksheet Format
+Displays the content in large font and transforms 3rd-level sections into questions which are by default
+collapsed.
 }

@@ -26,7 +26,7 @@
 #' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom DBI dbClearResult dbConnect dbBegin dbQuoteIdentifier dbSendStatement dbBind dbGetRowsAffected dbRollback
 #' @importFrom RPostgres Postgres
-#' @importFrom jsonlite toJSON unbox base64_enc
+#' @importFrom jsonlite toJSON unbox base64_enc serializeJSON
 #'
 #' @export
 setup_psql_event_store <- function (what = c('question_submission', 'exercise_submission', 'exercise_error'),
@@ -96,9 +96,7 @@ setup_psql_event_store <- function (what = c('question_submission', 'exercise_su
   })
 
   if (is.null(db_conn) || is.null(db_table)) {
-    return(function(...) {
-      warning("Could not save event for user ", get_userid())
-    })
+    return(function(...) {})
   }
 
   insert_stmt_prep <- sprintf('INSERT INTO %s (tutorial_id, tutorial_version, user_id, event, data)
@@ -113,18 +111,19 @@ setup_psql_event_store <- function (what = c('question_submission', 'exercise_su
         toJSON(list(obj = unbox(base64_enc(serialize(data, NULL, ascii = FALSE)))),
                          null = 'null')
       })
+      row_data <- list(tutorial_id, tutorial_version, user_id, event, json_data)
 
       tryCatch({
         stmt <- dbSendStatement(db_conn, insert_stmt_prep)
         tryCatch({
-          dbBind(stmt, list(tutorial_id, tutorial_version, user_id, event, json_data))
+          dbBind(stmt, row_data)
           dbGetRowsAffected(stmt)
         }, error = function (e) {
           stop(e)
         })
         dbClearResult(stmt)
       }, error = function (e) {
-        warning('Could not save event data to database: ', e)
+        warning('Could not save event data to database:\n\t', e, 'Serialized data: ', serializeJSON(row_data))
       })
     }
   }
