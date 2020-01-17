@@ -106,6 +106,9 @@ setup_psql_event_store <- function (what = c('question_submission', 'exercise_su
     if (event %in% what) {
       data$output <- NULL
       user_id <- get_userid()
+      if (is.null(user_id)) {
+        user_id <- sprintf('anonymous-session-%s', format(Sys.time(), '%Y%m%dT%H%M%S'))
+      }
 
       json_data <- tryCatch(toJSON(data, auto_unbox = TRUE, null = 'null'), error = function (e) {
         toJSON(list(obj = unbox(base64_enc(serialize(data, NULL, ascii = FALSE)))),
