@@ -39,6 +39,11 @@
   right: 0;
 }
 
+blockquote {
+  font-size: 1em;
+  font-style: italic;
+}
+
 /*--------------------------------------------------------
  * Clicker-question sections
  --------------------------------------------------------*/
@@ -80,9 +85,18 @@
  * Copyright
  --------------------------------------------------------*/
 .copyright {
-  display: none;
+  display: block;
+  position: fixed;
+  bottom: 0;
+  font-size: 0.5em;
+  text-align: center;
+  width: 100%;
+  padding: 0.2em 0;
+  background-color: #fff;
+  margin: 0;
+  left: 0;
+  z-index: 999999;
 }
-
 
 /*--------------------------------------------------------
  * Print styles (i.e., hide everything except the clicker questions and show copyright notice)
@@ -106,15 +120,7 @@
 }
 
 .copyright {
-  display: block;
-  position: fixed;
-  bottom: 0;
   font-size: 0.8rem;
-  text-align: center;
-  width: 100%;
-  padding: 0;
-  margin: 0;
-  left: 0;
 }
 
 .topicActions {
