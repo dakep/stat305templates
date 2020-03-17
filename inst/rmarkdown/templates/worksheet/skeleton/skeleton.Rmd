@@ -10,7 +10,13 @@ runtime: shiny_prerendered
 ```{r setup, include=FALSE}
 # Load the packages
 library(learnr)
+library(stat305templates)
 knitr::opts_chunk$set(echo = FALSE)
+options(stat305templates.render_clicker_questions = function () {
+  lecture_date <- '2020-03-17'
+  lecture_ends <- '11:45:50 PDT'
+  Sys.time() > as.POSIXct(sprintf('%s %s', lecture_date, lecture_ends))
+})
 ```
 <!-- Start of copyright footer. -->
 <footer class="copyright">
@@ -23,43 +29,27 @@ Not to be copied, used, or revised without explicit written permission from the 
 ## Worksheet Part 1
 This is a regular worksheet part.
 
-### Associated Clicker Question
-
-By default, 3rd-level sections define an iClicker question.
-These question will only be revealed by clicking on the button "Show clicker question".
-Ordered lists in iClicker questions will be enumerated with capital letters (A–Z).
-
-1. Answer option A.
-2. Answer option B.
-3. Answer option C.
-4. Answer option D.
-5. Answer option E.
-
-### Remarks {.no-clicker}
-
-This 3rd-level section is not an iClicker question and as such will be displayed immediately.
-
-## Worksheet Part 2
-
-### Associated Clicker Question {.no-collapse}
-
-This question will be shown immediately, without having to click a button.
-
-1. Answer option A.
-2. Answer option B.
-3. Answer option C.
-4. Answer option D.
-5. Answer option E.
+```{r}
+clicker_question("This is the associated clicker question",
+                 answer("Answer option A"),
+                 answer("Answer option B"),
+                 answer("Answer option C"),
+                 answer("Answer option D"),
+                 answer("Answer option E"),
+                 body = "Clicker questions can have optional text between the question title and the answer options.
+                         The entire question is only shown if the `stat305templates.render_clicker_questions` option
+                         is set to `TRUE`.")
+```
 
 
-## Worksheet Part 3
+### Curiosity Clicker Question
 
-### Curiosity Clicker Question {.no-collapse .only-class}
-
-This question is not marked and will not be shown when printing.
-
-1. Answer option A.
-2. Answer option B.
-3. Answer option C.
-4. Answer option D.
-5. Answer option E.
+```{r}
+clicker_question("This question is not marked and will not be shown when printing.",
+                 answer("Answer option A"),
+                 answer("Answer option B"),
+                 answer("Answer option C"),
+                 answer("Answer option D"),
+                 answer("Answer option E"),
+                 in_class_only = TRUE)
+```
