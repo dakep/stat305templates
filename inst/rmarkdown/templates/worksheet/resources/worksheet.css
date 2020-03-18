@@ -44,6 +44,10 @@ blockquote {
   font-style: italic;
 }
 
+.topics pre {
+  font-size: 1em;
+}
+
 /*--------------------------------------------------------
  * Clicker-question sections
  --------------------------------------------------------*/
