@@ -68,8 +68,6 @@ function submitSection(event, extraParameters) {
     extraParameters = {}
   }
 
-  spin.hide()
-
   // Run all visible code chunks, unless disabled by extra parameters
   if (!extraParameters.dontRunChunks) {
     const visibleChunks = $('.tutorial-exercise:visible')
@@ -107,6 +105,8 @@ function submitSection(event, extraParameters) {
       }
     }
   }
+
+  spin.hide()
 
   // All code chunks have run. Show confirmation dialog or submit directly
   if (confirmDialog.length > 0 && !extraParameters.passThrough) {
