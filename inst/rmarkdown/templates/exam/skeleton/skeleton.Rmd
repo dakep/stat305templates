@@ -1,0 +1,32 @@
+---
+title: "Exam"
+tutorial:
+  id: ca.ubc.stat.stat305-exam
+  version: 0.1
+output: stat305templates::exam
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+# Load the package
+library(stat305templates)
+knitr::opts_chunk$set(echo = FALSE)
+
+# Setup safe evaluation.
+enable_safe_eval()
+
+# Define sequential sections
+```
+
+```{r, context="server-start"}
+# Initialize database connections and set options
+
+
+```
+
+```{r, context="server"}
+
+```
+
+
+

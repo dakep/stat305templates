@@ -1,20 +1,25 @@
 Package: stat305templates
 Type: Package
 Title: STAT 305 Templates for learnr
-Version: 0.4.1
+Version: 0.5.0
 Authors@R: c(
     person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
     )
 Description: Templates for learnr quizzes and tutorials as used in STAT 305 (Introduction to Statistical Inference).
 License: MIT + file LICENSE
+Depends:
+  learnr
 Imports:
-  learnr,
   rmarkdown,
   RPostgres,
+  DBI,
+  shiny,
   shinyjs,
   unix,
   uuid,
+  jsonlite,
+  knitr,
   ellipsis (>= 0.2.0.1),
   checkmate
 Encoding: UTF-8

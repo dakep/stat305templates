@@ -40,24 +40,18 @@ clicker_question <- function(title, ..., body = NULL, in_class_only = FALSE, con
     ''
   }
 
-  # can not guarantee that `label` exists
-  label <- knitr::opts_current$get('label')
-  q_id <- if (is.null(label)) {
-    paste0('clicker-question-', as.hexmode(sample.int(1073741824L, 1L)))
-  } else {
-    label
-  }
+  q_id <- random_ui_id(knitr::opts_current$get('label'))
 
   answer_options <- tagList(lapply(answers, function (answer) {
-    tags$li(render_question_text(answer$label))
+    tags$li(render_markdown_as_html(answer$label))
   }))
 
   ns <- NS(q_id)
 
-  rendered <- doRenderTags(tagList(h3(render_question_text(title)), div(render_question_text(body)),
+  rendered <- doRenderTags(tagList(h3(render_markdown_as_html(title)), div(render_markdown_as_html(body)),
                                    tags$ol(answer_options)), indent = FALSE)
 
-  btn_rendered <- doRenderTags(a(render_question_text(btn_text), class = 'btn btn-primary show-clicker',
+  btn_rendered <- doRenderTags(a(render_markdown_as_html(btn_text), class = 'btn btn-primary show-clicker',
                                  `data-toggle` = 'collapse', `aria-expanded` = 'false',
                                  `aria-controls` = 'collapseClickerQuestion',
                                  href = paste('#', ns('answer_container'), sep = '')))
@@ -91,13 +85,6 @@ knit_print.clicker_question <- function(x, ...) {
   knitr::knit_print(ui)
 }
 
-dput_object <- function (x) {
-  conn <- textConnection('dput_object', 'w')
-  on.exit({ close(conn) })
-  dput(x, file = conn)
-  paste0(textConnectionValue(conn), collapse = '')
-}
-
 #' @importFrom shiny callModule
 clicker_prerendered_chunk <- function (question, ...) {
   render <- getOption('stat305templates.render_clicker_questions', TRUE)
@@ -119,31 +106,4 @@ clicker_question_server <- function (input, output, session, question) {
   output$answer_button <- renderUI({
     HTML(question$btn_rendered)
   })
-}
-
-#' @importFrom htmltools tagList HTML tags
-trigger_mathjax <- function(...) {
-  tagList(..., htmltools::tags$script(HTML("if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()")))
-}
-
-#' @importFrom markdown markdownToHTML markdownExtensions
-render_question_text <- function (text) {
-  if (inherits(text, 'html')) {
-    return(text)
-  }
-  if (inherits(text, "shiny.tag") || inherits(text, "shiny.tag.list")) {
-    return(text)
-  }
-  if (!is.null(text)) {
-    # convert markdown
-    md <- markdownToHTML(text = text, options = c('use_xhtml', 'fragment_only', 'mathjax'),
-                         extensions = markdownExtensions(), fragment.only = TRUE, encoding = 'UTF-8')
-    # remove leading and trailing paragraph
-    md <- sub('^<p>', '', md)
-    md <- sub('</p>\n?$', '', md)
-    return(HTML(md))
-  }
-  else {
-    return(NULL)
-  }
 }
