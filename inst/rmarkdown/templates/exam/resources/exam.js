@@ -70,7 +70,15 @@ function submitSection(event, extraParameters) {
 
   // Run all visible code chunks, unless disabled by extra parameters
   if (!extraParameters.dontRunChunks) {
-    const visibleChunks = $('.tutorial-exercise:visible')
+    // Check which chunks actually have code...
+    const visibleChunks = $('.tutorial-exercise:visible').filter(function () {
+      try {
+        return ace.edit($(this).find(".ace_editor").get(0)).getValue().trim().length > 0
+      } catch (e) {
+        window.console.warn("Can not determine if editor is empty. Assuming it is empty!", e)
+      }
+      return false
+    })
     var chunksLeft = visibleChunks.length
 
     if (chunksLeft > 0) {
@@ -78,14 +86,6 @@ function submitSection(event, extraParameters) {
       spin.show()
       visibleChunks.each(function () {
         const chunk = $(this)
-
-        // Check if the code chunk is empty
-        var empty = true
-        try {
-          empty = ace.edit(chunk.find(".ace_editor").get(0)).getValue().trim().length == 0
-        } catch (e) {
-          window.console.warn("Can not determine if editor is empty. Assuming it is empty!", e)
-        }
 
         if (!empty) {
           chunk.one('shiny:value', function () {
@@ -100,9 +100,7 @@ function submitSection(event, extraParameters) {
         }
       })
 
-      if (chunksLeft > 0) {
-        return false
-      }
+      return false
     }
   }
 
