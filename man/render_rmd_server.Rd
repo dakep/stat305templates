@@ -17,7 +17,7 @@ render_rmd_server(
 \item{file}{path to the RMarkdown file}
 
 \item{data}{a list of data to be made available to the Rmd file during rendering. Quoted items will be evaluated
-on the server before knitting the Rmd file.}
+on the server before knitting the Rmd file. Quoted expressions are evaluated in the \strong{server context}.}
 
 \item{runtime, output_format, quiet}{arguments passed on to \code{\link[rmarkdown:render]{rmarkdown::render()}}.}
 

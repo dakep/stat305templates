@@ -2,7 +2,7 @@
 #'
 #' @param file path to the RMarkdown file
 #' @param data a list of data to be made available to the Rmd file during rendering. Quoted items will be evaluated
-#'   on the server before knitting the Rmd file.
+#'   on the server before knitting the Rmd file. Quoted expressions are evaluated in the **server context**.
 #' @param show_only_with_section render the output only if the section is visible.
 #' @param runtime,output_format,quiet arguments passed on to [rmarkdown::render()].
 #' @return the UI output element
@@ -55,13 +55,14 @@ knit_print.rendered_rmd <- function(x, ...) {
 
 #' @importFrom shiny callModule
 .render_rmd_server_prerendered_chunk <- function (options, ...) {
+  eval_env <- parent.frame()
   options$envir <- as.environment(lapply(options$envir, function (envvar) {
     if (is.expression(envvar) || is.language(envvar)) {
-      return(local(eval(envvar)))
+      return(eval(envvar, eval_env))
     }
     return(envvar)
   }))
-  parent.env(options$envir) <- environment()
+  parent.env(options$envir) <- eval_env
 
   set.seed(get_session_data('master_seed', 1L) + 50L)
   rendered <- render(options$file, runtime = options$runtime, output_format = options$output_format,

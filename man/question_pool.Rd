@@ -28,7 +28,7 @@ are shown.}
 \item{container_class}{additional HTML classes to add to the container.}
 
 \item{post_rendered}{optional function to post-process rendered text (e.g., to replace placeholders). The function
-is called with a single string marked as HTML.}
+is called with a single string marked as HTML and evaluated in the \strong{server context}.}
 
 \item{show_only_with_section}{render the output only if the section is visible.}
 }

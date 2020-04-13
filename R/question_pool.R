@@ -9,7 +9,7 @@
 #' @param container_class additional HTML classes to add to the container.
 #' @param show_only_with_section render the output only if the section is visible.
 #' @param post_rendered optional function to post-process rendered text (e.g., to replace placeholders). The function
-#'   is called with a single string marked as HTML.
+#'   is called with a single string marked as HTML and evaluated in the **server context**.
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom checkmate assert_class
 #' @importFrom htmltools h5 doRenderTags
@@ -86,12 +86,13 @@ knit_print.question_pool <- function(x, ...) {
 
 #' @importFrom shiny callModule
 .question_pool_prerendered_chunk <- function (question, ...) {
-  callModule(.question_pool_server, question$id, question = question)
+  eval_env <- parent.frame()
+  callModule(.question_pool_server, question$id, question = question, eval_env = eval_env)
   invisible(TRUE)
 }
 
 #' @importFrom shiny updateRadioButtons observeEvent
-.question_pool_server <- function (input, output, session, question) {
+.question_pool_server <- function (input, output, session, question, eval_env) {
   set.seed(get_session_data('master_seed', 1L, asis = TRUE) + 10L)
   correct_answer <- sample(question$answers[['correct']], 1L)[[1L]]
   incorrect_answers <- sample(question$answers[['not_correct']], question$nr_answers)
@@ -101,7 +102,9 @@ knit_print.question_pool <- function(x, ...) {
   values <- c(correct_answer$value, sapply(incorrect_answers, `[[`, 'value'))
 
   if (!is.null(question$post_rendered)) {
-    labels <- lapply(labels, question$post_rendered)
+    labels <- lapply(labels, function (lbl) {
+      eval(substitute(pr(lbl), list(pr = question$post_rendered, lbl = lbl)), envir = eval_env)
+    })
   }
 
   values <- values[rand_order]
