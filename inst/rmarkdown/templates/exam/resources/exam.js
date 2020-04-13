@@ -101,7 +101,10 @@ function submitSection(event, extraParameters) {
           chunksLeft -= 1
         }
       })
-      return false
+
+      if (chunksLeft > 0) {
+        return false
+      }
     }
   }
 
