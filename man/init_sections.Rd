@@ -4,12 +4,23 @@
 \alias{init_sections}
 \title{Initialize sections for this session}
 \usage{
-init_sections(sections, hide = TRUE, session = getDefaultReactiveDomain())
+init_sections(
+  sections,
+  hide = TRUE,
+  randomize_order = FALSE,
+  session = getDefaultReactiveDomain()
+)
 }
 \arguments{
 \item{sections}{the sections object}
 
 \item{hide}{should sections be hidden by default.}
+
+\item{randomize_order}{randomize the order of sections. Can be a vector defining "strata"
+(\code{NA} meaning "leave section in this order").}
+}
+\value{
+sections in the new order.
 }
 \description{
 Initialize sections for this session

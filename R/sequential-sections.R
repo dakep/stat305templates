@@ -37,13 +37,50 @@ create_sections <- function (section, ..., .group_id) {
 #'
 #' @param sections the sections object
 #' @param hide should sections be hidden by default.
+#' @param randomize_order randomize the order of sections. Can be a vector defining "strata"
+#'    (`NA` meaning "leave section in this order").
+#' @return sections in the new order.
 #' @importFrom shiny getDefaultReactiveDomain
 #' @importFrom shinyjs useShinyjs
 #' @export
-init_sections <- function (sections, hide = TRUE, session = getDefaultReactiveDomain()) {
+init_sections <- function (sections, hide = TRUE, randomize_order = FALSE, session = getDefaultReactiveDomain()) {
   assert_class(sections, 'sequential_sections')
+
+  if (isTRUE(randomize_order)) {
+    randomize_order <- seq_along(sections)
+  } else if (!isFALSE(randomize_order) & !isTRUE(length(sections) == length(randomize_order))) {
+    stop('If `randomize_order` is a vector defining strata, it must be the same length as `sections`')
+  }
+
   useShinyjs(html = TRUE)
+
+  if (!isFALSE(randomize_order)) {
+    sections <- .reorder_sections(sections, randomize_order)
+  }
+
   callModule(.init_sections_module, attr(sections, 'gid', TRUE), sections = sections, hide = hide)
+
+  return(sections)
+}
+
+## Reorder the sections based on strata.
+.reorder_sections <- function (sections, strata) {
+  gid <- attr(sections, 'gid', TRUE)
+  uq_strata <- unique(na.omit(strata))
+  strata_order <- sample.int(length(uq_strata))
+  rand_strata <- unlist(lapply(uq_strata[strata_order], function (st) {
+    which(strata == st)
+  }))
+  rand_order <- seq_along(strata)
+  rand_order[!is.na(strata)] <- rand_strata
+
+  sections <- sections[rand_order]
+  for (i in seq_len(length(sections) - 1L)) {
+    sections[[i]]$next_sid <- sections[[i + 1L]]$sid
+  }
+  sections[[length(sections)]]$next_sid <- NULL
+  attr(sections, 'gid') <- gid
+  return(sections)
 }
 
 #' Show a specific section.
@@ -239,6 +276,20 @@ knit_print.sequential_section_end <- function (x, ...) {
 
   visible_sections <- .visible_sections()
 
+  section_order <- get_session_data('section_order')
+
+  next_sid <-  if (!is.null(section_order)) {
+    section_order[[options$sid]]
+  } else {
+    options$next_sid
+  }
+
+  next_section_id <- if (!is.null(next_sid)) {
+    session$ns(next_sid)
+  } else {
+    NULL
+  }
+
   observeEvent(visible_sections[[options$sid]], {
     toggleState(ns('btn'), condition = isTRUE(isolate(visible_sections[[options$sid]])))
   })
@@ -247,10 +298,9 @@ knit_print.sequential_section_end <- function (x, ...) {
     is_visible <- isTRUE(isolate(visible_sections[[options$sid]]))
     if (is_visible) {
       # Save all inputs
-      success <- tryCatch(save_fun(isolate(reactiveValuesToList(all_inputs)), session$ns(options$next_sid),
-                                   global_session),
+      success <- tryCatch(save_fun(isolate(reactiveValuesToList(all_inputs)), next_section_id, global_session),
                           error = function (e) {
-                            warning(e)
+                            warning("Can not save section: ", e)
                             return(FALSE)
                           })
 
@@ -260,7 +310,7 @@ knit_print.sequential_section_end <- function (x, ...) {
                     full_ns('dialog-'), tolower(as.character(isTRUE(success)))))
 
       # Show next section
-      .show_section_module(input, output, session, options$next_sid, hide_others = options$sid)
+      .show_section_module(input, output, session, next_sid, hide_others = options$sid)
     } else {
       hideElement(selector = '.spin-container', asis = TRUE)
     }
@@ -279,6 +329,11 @@ knit_print.sequential_section_end <- function (x, ...) {
 
 #' @importFrom shinyjs runjs
 .init_sections_module <- function (input, output, session, sections, hide = TRUE) {
+  # Preserve the order of sections.
+  section_order <- lapply(sections, `[[`, 'next_sid')
+  names(section_order) <- sapply(sections, `[[`, 'sid')
+  set_session_data('section_order', section_order)
+
   visible_sections <- get_session_data('visible_sections')
 
   if (is.null(visible_sections)) {
@@ -305,11 +360,6 @@ knit_print.sequential_section_end <- function (x, ...) {
   }
 
   if (is.character(hide_others)) {
-    # if (length(hide_others) > 1L) {
-    #   hideElement(selector = paste(sprintf('#%s', session$ns(hide_others)), collapse = ','))
-    # } else {
-    #   hideElement(hide_others)
-    # }
     for (scoped_sid in hide_others) {
       if (!isTRUE(scoped_sid == sid)) {
         hideElement(scoped_sid)

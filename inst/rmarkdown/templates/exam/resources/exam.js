@@ -70,7 +70,7 @@ function submitSection(event, extraParameters) {
 
   // Run all visible code chunks, unless disabled by extra parameters
   if (!extraParameters.dontRunChunks) {
-    // Check which chunks actually have code...
+    // Get all visible and non-empty chunks
     const visibleChunks = $('.tutorial-exercise:visible').filter(function () {
       try {
         return ace.edit($(this).find(".ace_editor").get(0)).getValue().trim().length > 0
@@ -85,19 +85,13 @@ function submitSection(event, extraParameters) {
       event.stopImmediatePropagation()
       spin.show()
       visibleChunks.each(function () {
-        const chunk = $(this)
-
-        if (!empty) {
-          chunk.one('shiny:value', function () {
-            chunksLeft -= 1
-            if (chunksLeft <= 0) {
-              extraParameters.dontRunChunks = true
-              submitButton.trigger('click', extraParameters)
-            }
-          }).find('.btn-tutorial-run').trigger('click')
-        } else {
+        $(this).one('shiny:value', function () {
           chunksLeft -= 1
-        }
+          if (chunksLeft <= 0) {
+            extraParameters.dontRunChunks = true
+            submitButton.trigger('click', extraParameters)
+          }
+        }).find('.btn-tutorial-run').trigger('click')
       })
 
       return false
