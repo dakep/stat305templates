@@ -14,12 +14,12 @@ random_ui_id <- function (prefix) {
 
 #' @importFrom htmltools tagList HTML tags
 trigger_mathjax <- function(...) {
-  tagList(..., htmltools::tags$script(HTML("if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()")))
+  tagList(..., htmltools::tags$script(HTML('if (window.exam) window.exam.triggerMathJax()')))
 }
 
 #' @importFrom shinyjs runjs
 remote_trigger_mathjax <- function () {
-  runjs('if (Tutorial.triggerMathJax) Tutorial.triggerMathJax()')
+  runjs('if (window.exam) window.exam.triggerMathJax()')
 }
 
 #' Render markdown text as HTML

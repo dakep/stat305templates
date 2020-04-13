@@ -139,6 +139,10 @@ function setRadioFromStore (name) {
   }
 }
 
+function triggerMathJax() {
+  window.MathJax && MathJax.Hub.Queue(["Typeset", MathJax.Hub])
+}
+
 /* Code to run beforehand */
 $(document).ready(function () {
   $('body').append(spin)
@@ -155,6 +159,9 @@ $(document).ready(function () {
     setRadioFromStore(event.name)
   })
 
+  // Ensure mathjax is run after input changes
+  $('.shiny-input-radiogroup').on('shiny:inputchanged', triggerMathJax)
+
   // Load shinyjs
   Shiny.addCustomMessageHandler('shinyjs-inject', function(content) {$("head").append(content)})
 })
@@ -163,6 +170,8 @@ return {
   setExamId: function (_examId) {
     examId = _examId
   },
+
+  triggerMathJax: triggerMathJax,
 
   showDialog: function (idPrefix, success) {
     if (success) {
