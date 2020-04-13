@@ -247,8 +247,8 @@ knit_print.sequential_section_end <- function (x, ...) {
     is_visible <- isTRUE(isolate(visible_sections[[options$sid]]))
     if (is_visible) {
       # Save all inputs
-      success <- tryCatch(save_fun(isolate(reactiveValuesToList(all_inputs)),
-                                   session$ns(options$next_sid), global_session),
+      success <- tryCatch(save_fun(isolate(reactiveValuesToList(all_inputs)), session$ns(options$next_sid),
+                                   global_session),
                           error = function (e) {
                             warning(e)
                             return(FALSE)

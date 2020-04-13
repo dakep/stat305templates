@@ -14,12 +14,11 @@ exam <- function (...) {
                    src = system.file('rmarkdown/templates/exam/resources', package = 'stat305templates'),
                    script = 'exam.js', stylesheet = 'exam.css')))
 
-  # opts_chunk$set(stat305templates.exam = TRUE)
-  # opts_hooks$set(stat305templates.exam = function (options) {
-  #   initialize_exam()
-  #   return(options)
-  # })
-  initialize_exam()
+  output_format$knitr$opts_chunk$stat305templates.exam <- TRUE
+  output_format$knitr$opts_hooks$stat305templates.exam <- function (options) {
+    initialize_exam()
+    return (options)
+  }
 
   return(output_format)
 }
@@ -43,6 +42,16 @@ initialize_exam <- function (...) {
   useShinyjs(html = TRUE)
 
   exam_id <- URLencode(paste(metadata$id %||% 'exam', metadata$version %||% '1', sep = '-'), reserved = TRUE)
+  set_session_data('exam_metadata', metadata)
+  set_session_data('exam_id', exam_id)
   runjs(sprintf('if (window.exam) { window.exam.setExamId("%s") }', exam_id))
+}
+
+#' Return the exam ID on the server
+#'
+#' @return the exam ID or NULL if not available.
+#' @export
+get_exam_id <- function () {
+  get_session_data('exam_id', asis = TRUE)
 }
 

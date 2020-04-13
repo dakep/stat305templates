@@ -80,13 +80,26 @@ function submitSection(event, extraParameters) {
       spin.show()
       visibleChunks.each(function () {
         const chunk = $(this)
-        chunk.one('shiny:value', function () {
+
+        // Check if the code chunk is empty
+        var empty = true
+        try {
+          empty = ace.edit(chunk.find(".ace_editor").get(0)).getValue().trim().length == 0
+        } catch (e) {
+          window.console.warn("Can not determine if editor is empty. Assuming it is empty!", e)
+        }
+
+        if (!empty) {
+          chunk.one('shiny:value', function () {
+            chunksLeft -= 1
+            if (chunksLeft <= 0) {
+              extraParameters.dontRunChunks = true
+              submitButton.trigger('click', extraParameters)
+            }
+          }).find('.btn-tutorial-run').trigger('click')
+        } else {
           chunksLeft -= 1
-          if (chunksLeft <= 0) {
-            extraParameters.dontRunChunks = true
-            submitButton.trigger('click', extraParameters)
-          }
-        }).find('.btn-tutorial-run').trigger('click')
+        }
       })
       return false
     }

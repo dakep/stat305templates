@@ -63,7 +63,6 @@ knit_print.rendered_rmd <- function(x, ...) {
   }))
   parent.env(options$envir) <- environment()
 
-  warning("The master seed is set to ", get_session_data('master_seed', 1L))
   set.seed(get_session_data('master_seed', 1L) + 50L)
   rendered <- render(options$file, runtime = options$runtime, output_format = options$output_format,
                      envir = options$envir, output_dir = tempdir(), quiet = options$quiet)
