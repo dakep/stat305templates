@@ -4,7 +4,7 @@
 \alias{get_safe_evaluator}
 \title{Get a function to safely evaluate user code.}
 \usage{
-get_safe_evaluator(priority, rlimits, allow_env)
+get_safe_evaluator(priority, envir, rlimits, allow_env)
 }
 \arguments{
 \item{priority, rlimits, allow_env}{see \link{enable_safe_eval} for details.}

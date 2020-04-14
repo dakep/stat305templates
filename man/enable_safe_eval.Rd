@@ -6,6 +6,7 @@
 \usage{
 enable_safe_eval(
   max_fsize = 1L,
+  envir = parent.frame(),
   max_address_space = 2048L,
   max_data = 256L,
   priority = 20L,
@@ -17,6 +18,8 @@ enable_safe_eval(
 }
 \arguments{
 \item{max_fsize}{maximum size of created files in MiB.}
+
+\item{envir}{the R environment where the R expression is evaluated.}
 
 \item{max_address_space}{maximum size of the address space in MiB.}
 

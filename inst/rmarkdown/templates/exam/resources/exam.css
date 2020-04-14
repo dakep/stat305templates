@@ -2,8 +2,17 @@
   display: none;
 }
 
+.question-pool .form-group {
+  width: 100%;
+}
+
+.question-pool .form-group .radio {
+  margin: 1em 0;
+}
+
 .sequential-section {
   display: none;
+  margin: 1em 0 3em;
 }
 
 .modal .code {

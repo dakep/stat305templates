@@ -1,5 +1,6 @@
 #' Enable Safe Evaluation of User Code for `learnr` Exercises
 #'
+#' @param envir the R environment where the R expression is evaluated.
 #' @param max_fsize maximum size of created files in MiB.
 #' @param max_address_space maximum size of the address space in MiB.
 #' @param max_data maximum size of the data memory in MiB.
@@ -11,9 +12,10 @@
 #'                          Only change if you know what you are doing, as most of them are fundamental to the R process
 #'                          to work.
 #' @export
-enable_safe_eval <- function (max_fsize = 1L, max_address_space = 2048L, max_data = 256L, priority = 20L, rlimits,
-                              allow_env, default_allow_env = c('^SHELL$', '^USER$', '^LANG$', '^LC_CTYPE$', '^HOME$',
-                                                               '^DYLD_FALLBACK_LIBRARY_PATH$', '^R_.*')) {
+enable_safe_eval <- function (max_fsize = 1L, envir = parent.frame(), max_address_space = 2048L, max_data = 256L,
+                              priority = 20L, rlimits, allow_env,
+                              default_allow_env = c('^SHELL$', '^USER$', '^LANG$', '^LC_CTYPE$', '^HOME$',
+                                                    '^DYLD_FALLBACK_LIBRARY_PATH$', '^R_.*')) {
   if (missing(rlimits)) {
     mb <- 1024 * 1024
     rlimits <- c(fsize = max_fsize * mb, as = max_address_space * mb, data = max_data * mb)
@@ -24,7 +26,7 @@ enable_safe_eval <- function (max_fsize = 1L, max_address_space = 2048L, max_dat
     c(allow_env, default_allow_env)
   }
 
-  options(tutorial.exercise.evaluator = get_safe_evaluator(priority, rlimits, allow_env))
+  options(tutorial.exercise.evaluator = get_safe_evaluator(priority, envir = envir, rlimits, allow_env))
 }
 
 #' Get a function to safely evaluate user code.
@@ -34,9 +36,12 @@ enable_safe_eval <- function (max_fsize = 1L, max_address_space = 2048L, max_dat
 #'
 #' @importFrom unix eval_safe
 #' @importFrom shiny div
-get_safe_evaluator <- function (priority, rlimits, allow_env) {
+get_safe_evaluator <- function (priority, envir, rlimits, allow_env) {
   # Clear the environment before evaluating the call.
-  clear_env <- function () {
+  outer_envir <- new.env()
+  outer_envir$priority <- priority
+  outer_envir$allow_env <- allow_env
+  outer_envir$clear_env <- function () {
     envvars <- names(Sys.getenv())
     to_remove <- matrix(unlist(lapply(allow_env, function (reg) {
       !grepl(reg, envvars, ignore.case = TRUE, perl = TRUE)
@@ -45,22 +50,36 @@ get_safe_evaluator <- function (priority, rlimits, allow_env) {
 
     Sys.unsetenv(envvars[to_remove])
   }
+  outer_envir$envir <- envir
 
   return(function (expr, timeout) {
     result <- NULL
+    outer_envir$expr <- substitute(expr)
+    outer_envir$timeout <- timeout
+
+    # Pull learnr stuff into outer environment
+    outer_envir$exercise <- parent.frame()$exercise
+    outer_envir$evaluate_exercise <- learnr:::evaluate_exercise
+
     return(list(
       start = function() {
         tryCatch(
-          result <<- eval_safe({
+          result <<- evalq(eval_safe({
             clear_env()
-            force(expr)
-          }, timeout = timeout, priority = priority, rlimits = rlimits),
+            tryCatch({
+              .setup <- parse(text = trimws(exercise$options$exercise.checker, whitespace = '"'))
+              add_to_envir <- eval(.setup, envir)
+              for (newvar in names(add_to_envir)) {
+                assign(newvar, add_to_envir[[newvar]], envir)
+              }
+              rm(.setup, add_to_envir)
+            }, error = function (e) {})
+            eval(expr)
+          }, timeout = timeout, priority = priority, rlimits = rlimits), envir = outer_envir),
           error = function (e) {
-            error_message <- sprintf("Resource limits exceeded (%s).", e)
             result <<- list(feedback = NULL,
-                            error_message = error_message,
-                            html_output = div(class = 'alert alert-danger', role = 'alert', error_message))
-            warning("Resource limits exceeded. Can not evaluate code.", e)
+                            error_message = as.character(e),
+                            html_output = div(class = 'alert alert-danger', role = 'alert', as.character(e)))
           })
       },
       completed = function() {
