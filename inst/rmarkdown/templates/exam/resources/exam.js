@@ -149,6 +149,12 @@ $(document).ready(function () {
   // Interrupt submission of sections
   $('button.submit-section').click(submitSection)
 
+  // Show the spinner until shiny is idling the first time.
+  spin.show()
+  $(document).one('shiny:idle', function () {
+    spin.hide()
+  })
+
   // Ensure that every radio button is saved!
   $('body').on('change', 'input[type="radio"]', function (event) {
     storeAnswers()
@@ -169,6 +175,9 @@ $(document).ready(function () {
 return {
   setExamId: function (_examId) {
     examId = _examId
+    $('.shiny-input-radiogroup input[type="radio"]').each(function() {
+      setRadioFromStore($(this).attr('name'))
+    })
   },
 
   triggerMathJax: triggerMathJax,
