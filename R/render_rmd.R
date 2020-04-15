@@ -4,13 +4,15 @@
 #' @param data a list of data to be made available to the Rmd file during rendering. Quoted items will be evaluated
 #'   on the server before knitting the Rmd file. Quoted expressions are evaluated in the **server context**.
 #' @param show_only_with_section render the output only if the section is visible.
-#' @param runtime,output_format,quiet arguments passed on to [rmarkdown::render()].
+#' @param runtime,quiet arguments passed on to [rmarkdown::render()].
+#' @param section_divs,md_extensions,df_print... passed on to [rmarkdown::html_fragment()].
 #' @return the UI output element
 #'
-#' @importFrom rmarkdown md_document
+#' @importFrom rmarkdown html_fragment
 #'
 #' @export
-render_rmd_server <- function (file, data = list(), runtime = 'static', output_format, quiet = TRUE,
+render_rmd_server <- function (file, data = list(), runtime = 'static', quiet = TRUE,
+                               section_divs = FALSE, md_extensions = '+tex_math_dollars', df_print = 'kable', ...,
                                show_only_with_section = TRUE) {
   id <- random_ui_id()
 
@@ -22,11 +24,12 @@ render_rmd_server <- function (file, data = list(), runtime = 'static', output_f
     stop("`data` must be a list.")
   }
 
-  if (missing(output_format)) {
-    output_format <- md_document(variant = 'markdown', md_extensions = '+tex_math_dollars')
-  }
+  # Force evaluation of output arguments!
+  output_format_args <- c(list(section_divs = section_divs, md_extensions = md_extensions, df_print = df_print),
+                          list(...))
+  output_format <- substitute(do.call(rmarkdown::html_fragment, output_format_args))
 
-  return(structure(list(id = id, file = file, envir = data, runtime = runtime, output_format = output_format,
+  return(structure(list(id = id, file = file, envir = data, runtime = runtime, output_format_call = output_format,
                         show_only_with_section = isTRUE(show_only_with_section), quiet = quiet),
                    class = 'rendered_rmd'))
 }
@@ -64,10 +67,12 @@ knit_print.rendered_rmd <- function(x, ...) {
   }))
   parent.env(options$envir) <- eval_env
 
+  tmp_dir <- tempdir()
+
   set.seed(get_session_data('master_seed', 1L) + 50L)
-  rendered <- render(options$file, runtime = options$runtime, output_format = options$output_format,
-                     envir = options$envir, output_dir = tempdir(), quiet = options$quiet)
-  ui <- trigger_mathjax(includeMarkdown(rendered))
+  rendered <- render(options$file, runtime = options$runtime, output_format = eval(options$output_format),
+                     envir = options$envir, output_dir = tmp_dir, intermediates_dir = tmp_dir, quiet = options$quiet)
+  ui <- trigger_mathjax(HTML(paste0(readLines(rendered, encoding = 'UTF-8'), collapse = '\n')))
 
   callModule(.render_rmd_server_impl, options$id, options = options, ui = ui,
              username = getDefaultReactiveDomain()$username %||% 'anonymous')

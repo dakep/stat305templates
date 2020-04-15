@@ -8,8 +8,11 @@ render_rmd_server(
   file,
   data = list(),
   runtime = "static",
-  output_format,
   quiet = TRUE,
+  section_divs = FALSE,
+  md_extensions = "+tex_math_dollars",
+  df_print = "kable",
+  ...,
   show_only_with_section = TRUE
 )
 }
@@ -19,7 +22,9 @@ render_rmd_server(
 \item{data}{a list of data to be made available to the Rmd file during rendering. Quoted items will be evaluated
 on the server before knitting the Rmd file. Quoted expressions are evaluated in the \strong{server context}.}
 
-\item{runtime, output_format, quiet}{arguments passed on to \code{\link[rmarkdown:render]{rmarkdown::render()}}.}
+\item{runtime, quiet}{arguments passed on to \code{\link[rmarkdown:render]{rmarkdown::render()}}.}
+
+\item{section_divs, md_extensions, df_print...}{passed on to \code{\link[rmarkdown:html_fragment]{rmarkdown::html_fragment()}}.}
 
 \item{show_only_with_section}{render the output only if the section is visible.}
 }
