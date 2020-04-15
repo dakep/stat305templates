@@ -44,7 +44,7 @@ initialize_exam <- function (...) {
   exam_id <- URLencode(paste(metadata$id %||% 'exam', metadata$version %||% '1', sep = '-'), reserved = TRUE)
   set_session_data('exam_metadata', metadata)
   set_session_data('exam_id', exam_id)
-  runjs(sprintf('if (window.exam) { window.exam.setExamId("%s") }', exam_id))
+  runjs(sprintf('if (window.exam) { window.exam.setExamId("%s") } else { window.examId = "%s" }', exam_id, exam_id))
 }
 
 #' Return the exam ID on the server

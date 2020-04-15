@@ -139,6 +139,12 @@ function setRadioFromStore (name) {
   }
 }
 
+function reloadFromStore () {
+  $('.shiny-input-radiogroup input[type="radio"]').each(function() {
+    setRadioFromStore($(this).attr('name'))
+  })
+}
+
 function triggerMathJax() {
   window.MathJax && MathJax.Hub.Queue(["Typeset", MathJax.Hub])
 }
@@ -165,6 +171,12 @@ $(document).ready(function () {
     setRadioFromStore(event.name)
   })
 
+  if (window.examId) {
+    examId = window.examId
+    reloadFromStore()
+    delete window.examId
+  }
+
   // Ensure mathjax is run after input changes
   $('.shiny-input-radiogroup').on('shiny:inputchanged', triggerMathJax)
 
@@ -175,9 +187,7 @@ $(document).ready(function () {
 return {
   setExamId: function (_examId) {
     examId = _examId
-    $('.shiny-input-radiogroup input[type="radio"]').each(function() {
-      setRadioFromStore($(this).attr('name'))
-    })
+    reloadFromStore()
   },
 
   triggerMathJax: triggerMathJax,
