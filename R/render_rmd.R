@@ -57,6 +57,7 @@ knit_print.rendered_rmd <- function(x, ...) {
 }
 
 #' @importFrom shiny callModule
+#' @importFrom rmarkdown render
 .render_rmd_server_prerendered_chunk <- function (options, ...) {
   eval_env <- parent.frame()
   options$envir <- as.environment(lapply(options$envir, function (envvar) {
@@ -68,10 +69,18 @@ knit_print.rendered_rmd <- function(x, ...) {
   parent.env(options$envir) <- eval_env
 
   tmp_dir <- tempfile('render_rmd')
-  on.exit(unlink(tmp_dir, force = TRUE, recursive = TRUE), add = TRUE, after = FALSE)
+
+  # The rmarkdown::render function leaves a folder in the tempdir() folder behind!
+  # Manual hack to remove this folder
+  dirs_before_render <- list.files(tempdir(), full.names = TRUE, include.dirs = TRUE)
+  on.exit({
+    unlink(setdiff(list.files(tempdir(), full.names = TRUE, include.dirs = TRUE), dirs_before_render),
+           force = TRUE, recursive = TRUE)
+  }, add = TRUE, after = FALSE)
 
   set.seed(get_session_data('master_seed', 1L) + 50L)
   rendered <- render(options$file, runtime = options$runtime, output_format = eval(options$output_format),
+                     knit_root_dir = tmp_dir,
                      envir = options$envir, output_dir = tmp_dir, intermediates_dir = tmp_dir, quiet = options$quiet)
   ui <- trigger_mathjax(HTML(paste0(readLines(rendered, encoding = 'UTF-8'), collapse = '\n')))
 
@@ -81,7 +90,6 @@ knit_print.rendered_rmd <- function(x, ...) {
 }
 
 #' @importFrom shiny callModule includeMarkdown renderUI
-#' @importFrom rmarkdown render
 .render_rmd_server_impl <- function (input, output, session, options, ui, username) {
   visible_sections <- .visible_sections(options$section)
   output$rmd_output <- renderUI({
