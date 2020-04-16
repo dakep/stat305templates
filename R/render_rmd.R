@@ -67,7 +67,8 @@ knit_print.rendered_rmd <- function(x, ...) {
   }))
   parent.env(options$envir) <- eval_env
 
-  tmp_dir <- tempdir()
+  tmp_dir <- tempfile('render_rmd')
+  on.exit(unlink(tmp_dir, force = TRUE, recursive = TRUE), add = TRUE, after = FALSE)
 
   set.seed(get_session_data('master_seed', 1L) + 50L)
   rendered <- render(options$file, runtime = options$runtime, output_format = eval(options$output_format),
