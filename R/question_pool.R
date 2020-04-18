@@ -3,8 +3,8 @@
 #'
 #' @param title question title.
 #' @param ... answer options.
-#' @param nr_answers number of incorrect answers to display. By default one correct answer and all incorrect answers
-#'  are shown.
+#' @param nr_answers number of incorrect answers to display. By default one correct answer and at most 4 incorrect
+#'   answers are shown.
 #' @param random_answer_order should the order of answers be randomized?
 #' @param container_class additional HTML classes to add to the container.
 #' @param show_only_with_section render the output only if the section is visible.
@@ -14,7 +14,7 @@
 #' @importFrom checkmate assert_class
 #' @importFrom htmltools h5 doRenderTags
 #' @export
-question_pool <- function(title, ..., nr_answers, random_answer_order = TRUE, container_class = NULL,
+question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE, container_class = NULL,
                           post_rendered = NULL, title_container = h5,
                           show_only_with_section = TRUE) {
   # Capture and validate answers.
@@ -27,8 +27,10 @@ question_pool <- function(title, ..., nr_answers, random_answer_order = TRUE, co
   }), recursive = FALSE, use.names = FALSE)
   answers <- split(answers, factor(is_correct, labels = c('not_correct', 'correct')))
 
-  if (missing(nr_answers)) {
-    nr_answers <- length(answers[['not_correct']])
+  nr_answers <- if (is.null(nr_answers)) {
+    length(answers[['not_correct']])
+  } else {
+    min(nr_answers, length(answers[['not_correct']]))
   }
 
   if (length(answers[['correct']]) == 0L) {
@@ -132,22 +134,5 @@ knit_print.question_pool <- function(x, ...) {
                        choiceValues = values, choiceNames = labels)
     remote_trigger_mathjax()
   }
-
-  # observe(label = 'update radios', {
-  #   visible_condition <- .visible_condition(question$section)
-  #   if (!question$show_only_with_section || visible_condition()) {
-  #     warning("Transitioning question pool ", question$id, " from not visible to visible. Latest valid input was ",
-  #             latest_valid_input)
-  #     # Going from not visible to visible
-  #     updateRadioButtons(session, inputId = 'answer_radios', selected = latest_valid_input,
-  #                        choiceValues = values, choiceNames = labels)
-  #   } else {
-  #     # Going from visible to not visible
-  #     latest_valid_input <- isolate(input$answer_radios)
-  #     warning("Transitioning question pool ", question$id, " from visible to not visible. Setting latest valid input to ",
-  #             latest_valid_input)
-  #     updateRadioButtons(session, inputId = 'answer_radios', choices = c('N/A' = 'N/A'), selected = '')
-  #   }
-  # })
 }
 

@@ -7,7 +7,7 @@
 question_pool(
   title,
   ...,
-  nr_answers,
+  nr_answers = 4,
   random_answer_order = TRUE,
   container_class = NULL,
   post_rendered = NULL,
@@ -20,8 +20,8 @@ question_pool(
 
 \item{...}{answer options.}
 
-\item{nr_answers}{number of incorrect answers to display. By default one correct answer and all incorrect answers
-are shown.}
+\item{nr_answers}{number of incorrect answers to display. By default one correct answer and at most 4 incorrect
+answers are shown.}
 
 \item{random_answer_order}{should the order of answers be randomized?}
 

@@ -2,23 +2,27 @@
 #'
 #' To begin a section, call [begin_section()] with the desired section, to end a section, call [end_section()].
 #'
-#' @param section,... names of sections, to be displayed in the given order
+#' @param ... named sections, to be displayed in the given order.
 #' @param .group_id id for this group of sections.
 #' @return a list of sections.
 #'
 #' @importFrom shinyjs useShinyjs
 #' @importFrom shiny NS
 #' @export
-create_sections <- function (section, ..., .group_id) {
-  section_names <- c(section, list(...))
+create_sections <- function (..., .group_id) {
+  section_titles <- list(...)
+
+  if (is.null(names(section_titles)) || any(names(section_titles) == '')) {
+    stop("All sections must have names.")
+  }
 
   group_id <- if (missing(.group_id)) {
     'seq-section'
   } else {
     paste('seq-section', .group_id, sep = '_')
   }
-  sections <- vector('list', length(section_names))
-  names(sections) <- section_names
+  sections <- vector('list', length(section_titles))
+  names(sections) <- names(section_titles)
 
   for (i in seq_along(sections)) {
     next_section_id <- if (i < length(sections)) {
@@ -27,7 +31,7 @@ create_sections <- function (section, ..., .group_id) {
       NULL
     }
     sections[[i]] <- structure(list(group_id = group_id, sid = as.character(i), next_sid = next_section_id,
-                                    id = NS(group_id, i), title = render_markdown_as_html(section_names[[i]])),
+                                    id = NS(group_id, i), title = render_markdown_as_html(section_titles[[i]])),
                                class = 'sequential_section')
   }
   return(structure(sections, class = 'sequential_sections', gid = group_id))

@@ -4,10 +4,10 @@
 \alias{create_sections}
 \title{Create a series of sections, displayed sequentially.}
 \usage{
-create_sections(section, ..., .group_id)
+create_sections(..., .group_id)
 }
 \arguments{
-\item{section, ...}{names of sections, to be displayed in the given order}
+\item{...}{named sections, to be displayed in the given order.}
 
 \item{.group_id}{id for this group of sections.}
 }
