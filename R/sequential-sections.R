@@ -278,6 +278,9 @@ knit_print.sequential_section_end <- function (x, ...) {
   save_fun <- tryCatch(match.fun(getOption('stat305templates.section_submitted', NULL)),
                        error = function (...) { function (...) { return(TRUE); } })
 
+  # Emit JS event that a section is available
+  shinyjs::runjs(sprintf('$("#%s").trigger("exam:sectioninitialized")', full_ns(NULL)))
+
   visible_sections <- .visible_sections()
 
   section_order <- get_session_data('section_order')
@@ -310,9 +313,11 @@ knit_print.sequential_section_end <- function (x, ...) {
 
       # Give feedback to user
       hideElement(selector = '.spin-container', asis = TRUE)
-      runjs(sprintf('if (window.exam) window.exam.showDialog("%s", %s)',
-                    full_ns('dialog-'), tolower(as.character(isTRUE(success)))))
 
+      js_success <- tolower(as.character(isTRUE(success)))
+      runjs(sprintf('if (window.exam) window.exam.showDialog("%s", %s);
+                    $("#%s").trigger("exam:sectionsaved", {"success": %s})',
+                    full_ns('dialog-'), js_success, full_ns(NULL), js_success))
       # Show next section
       .show_section_module(input, output, session, next_sid, hide_others = options$sid)
     } else {
@@ -348,7 +353,9 @@ knit_print.sequential_section_end <- function (x, ...) {
   vis <- !isTRUE(hide)
   for (section in sections) {
     visible_sections[[section$sid]] <- vis
-    hideElement(section$sid)
+    if (!vis) {
+      hideElement(section$sid)
+    }
   }
   invisible(NULL)
 }

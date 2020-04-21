@@ -85,7 +85,7 @@ knit_print.rendered_rmd <- function(x, ...) {
   ui <- trigger_mathjax(HTML(paste0(readLines(rendered, encoding = 'UTF-8'), collapse = '\n')))
 
   callModule(.render_rmd_server_impl, options$id, options = options, ui = ui,
-             username = getDefaultReactiveDomain()$username %||% 'anonymous')
+             username = getDefaultReactiveDomain()$user %||% 'anonymous')
   invisible(TRUE)
 }
 

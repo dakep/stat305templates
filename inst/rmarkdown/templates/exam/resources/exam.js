@@ -189,6 +189,9 @@ return {
     examId = _examId
     reloadFromStore()
   },
+  getExamId: function (_examId) {
+    return examId
+  },
 
   triggerMathJax: triggerMathJax,
 

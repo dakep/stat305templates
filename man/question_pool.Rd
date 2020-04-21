@@ -12,6 +12,7 @@ question_pool(
   container_class = NULL,
   post_rendered = NULL,
   title_container = h5,
+  correct_label = 12,
   show_only_with_section = TRUE
 )
 }
@@ -29,6 +30,10 @@ answers are shown.}
 
 \item{post_rendered}{optional function to post-process rendered text (e.g., to replace placeholders). The function
 is called with a single string marked as HTML and evaluated in the \strong{server context}.}
+
+\item{correct_label}{if not \code{NULL}, change the answer option labels to hex numbers with the right-most digit
+being equal to the given number (by default 0xa). The length of the hex number is determined by the number of
+answer options.}
 
 \item{show_only_with_section}{render the output only if the section is visible.}
 }

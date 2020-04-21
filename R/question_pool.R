@@ -10,12 +10,15 @@
 #' @param show_only_with_section render the output only if the section is visible.
 #' @param post_rendered optional function to post-process rendered text (e.g., to replace placeholders). The function
 #'   is called with a single string marked as HTML and evaluated in the **server context**.
+#' @param correct_label if not `NULL`, change the answer option labels to hex numbers with the right-most digit
+#'   being equal to the given number (by default 0xa). The length of the hex number is determined by the number of
+#'   answer options.
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom checkmate assert_class
 #' @importFrom htmltools h5 doRenderTags
 #' @export
 question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE, container_class = NULL,
-                          post_rendered = NULL, title_container = h5,
+                          post_rendered = NULL, title_container = h5, correct_label = 0xc,
                           show_only_with_section = TRUE) {
   # Capture and validate answers.
   check_dots_unnamed()
@@ -26,6 +29,24 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
     answer$correct
   }), recursive = FALSE, use.names = FALSE)
   answers <- split(answers, factor(is_correct, labels = c('not_correct', 'correct')))
+
+  # adjust answer label
+  if (!is.null(correct_label)) {
+    if (!isTRUE(correct_label <= 0xf)) {
+      stop('`correct_label` must be between 0x0 and 0xf')
+    }
+    sample_pool <- 0xf * (length(answers) %/% 16L + 1L)
+    correct_vals <- as.hexmode(16L * sample.int(sample_pool, length(answers$correct)) + correct_label)
+    wrong_vals <- as.hexmode(16L * sample.int(sample_pool, length(answers$not_correct)) +
+                               sample(c(seq_len(correct_label),
+                                        1L + correct_label + seq_len(16L - correct_label - 1L)) - 1,
+                                      length(answers$not_correct), replace = TRUE))
+    answers$correct <- mapply(answer = answers$correct, value = as.character(correct_vals),
+                              FUN = function (answer, value) { answer$value <- value; answer }, SIMPLIFY = FALSE)
+    answers$not_correct <- mapply(answer = answers$not_correct, value = as.character(wrong_vals),
+                                  FUN = function (answer, value) { answer$value <- value; answer }, SIMPLIFY = FALSE)
+  }
+
 
   nr_answers <- if (is.null(nr_answers)) {
     length(answers[['not_correct']])
@@ -56,6 +77,7 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
                         show_only_with_section = isTRUE(show_only_with_section), container_class = container_class),
                    class = 'question_pool'))
 }
+
 
 #' Knitr question pool print methods
 #'
