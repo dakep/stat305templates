@@ -16,6 +16,7 @@
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom checkmate assert_class
 #' @importFrom htmltools h5 doRenderTags
+#' @importFrom digest digest2int
 #' @export
 question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE, container_class = NULL,
                           post_rendered = NULL, title_container = h5, correct_label = 0xc,
@@ -30,6 +31,7 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
   }), recursive = FALSE, use.names = FALSE)
   answers <- split(answers, factor(is_correct, labels = c('not_correct', 'correct')))
 
+  set.seed(digest2int(knitr::opts_current$get('label') %||% 'unnamed-chunk'))
   # adjust answer label
   if (!is.null(correct_label)) {
     if (!isTRUE(correct_label <= 0xf)) {
