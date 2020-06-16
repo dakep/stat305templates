@@ -15,15 +15,13 @@ start_user_session <- function (appid, userid_param_name = 'userid', default_use
   useShinyjs(html = TRUE)
   extendShinyjs(script = system.file('srcjs', 'session.js', package = 'stat305templates'),
                 functions = c('getcookie', 'setcookie', 'rmcookie'))
-
-  if (is.null(.get_user_id(domain))) {
-    .set_user_id(domain, as.character(default_userid))
-  }
+  initial_userid <- .get_user_id(domain, as.character(default_userid))
+  .set_js_session_user_id(domain, initial_userid)
 
   observe(domain = domain, label = 'read_session_cookie', {
     user_id <- read_session_cookie(appid, param_name = userid_param_name, session_length = session_length,
                                    domain = domain)
-    .set_user_id(domain, user_id)
+    .set_js_session_user_id(domain, user_id)
   })
 
   return(invisible(NULL))
@@ -70,10 +68,12 @@ read_session_cookie <- function (appid, domain = shiny::getDefaultReactiveDomain
   }
 }
 
-.get_user_id <- function (session) {
-  tryCatch(get('stat305templates_user_id', envir = session$userData, mode = 'character'), error = function (e) NULL)
+.get_user_id <- function (session, default = 'unknown') {
+  js_session_user <- tryCatch(get('stat305templates_user_id', envir = session$userData, mode = 'character'),
+                              error = function (e) NULL)
+  session$user %||% js_session_user %||% Sys.getenv('EXAMUSER', default)
 }
 
-.set_user_id <- function (session, user_id) {
+.set_js_session_user_id <- function (session, user_id) {
   session$userData$stat305templates_user_id <- user_id
 }

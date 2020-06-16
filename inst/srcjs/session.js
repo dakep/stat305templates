@@ -19,10 +19,8 @@ shinyjs.getcookie = function(params) {
   params = parseParams(params);
   const cookie = Cookies.get(params.name);
   if (typeof cookie !== "undefined") {
-    window.console.log("Setting input '" + params.input_prefix + params.name + "' to:", cookie)
     Shiny.onInputChange(params.input_prefix + params.name, cookie);
   } else {
-    window.console.log("Setting input '" + params.input_prefix + params.name + "' to: ''")
     Shiny.onInputChange(params.input_prefix + params.name, "");
   }
 };
@@ -30,7 +28,6 @@ shinyjs.getcookie = function(params) {
 shinyjs.setcookie = function(params) {
   params = parseParams(params);
   Cookies.set(params.name, params.data, { expires: params.expires });
-  window.console.log("Setting input '" + params.input_prefix + params.name + "' to:", params.data)
   Shiny.onInputChange(params.input_prefix + params.name, params.data);
 };
 
