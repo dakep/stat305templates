@@ -1,7 +1,7 @@
 Package: stat305templates
 Type: Package
 Title: STAT 305 Templates for learnr
-Version: 0.6.1
+Version: 0.7.0
 Authors@R: c(
     person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
@@ -16,11 +16,13 @@ Imports:
   DBI,
   shiny,
   shinyjs,
+  rlang,
   unix,
   uuid,
   digest,
   jsonlite,
   knitr,
+  openssl,
   ellipsis (>= 0.2.0.1),
   checkmate
 Encoding: UTF-8

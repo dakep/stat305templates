@@ -3,8 +3,8 @@
 #'
 #' @param title question title.
 #' @param ... answer options.
-#' @param nr_answers number of incorrect answers to display. By default one correct answer and at most 4 incorrect
-#'   answers are shown.
+#' @param nr_answers maximum number of answers to display. At least one correct answer will always be shown.
+#' @param mc show as multiple choice.
 #' @param random_answer_order should the order of answers be randomized?
 #' @param container_class additional HTML classes to add to the container.
 #' @param show_only_with_section render the output only if the section is visible.
@@ -15,15 +15,18 @@
 #'   answer options.
 #' @importFrom ellipsis check_dots_unnamed
 #' @importFrom checkmate assert_class
+#' @importFrom knitr opts_current
 #' @importFrom htmltools h5 doRenderTags
 #' @importFrom digest digest2int
 #' @export
-question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE, container_class = NULL,
-                          post_rendered = NULL, title_container = h5, correct_label = 0xc,
+question_pool <- function(title, ..., nr_answers = 5, random_answer_order = TRUE, container_class = NULL,
+                          mc = FALSE, post_rendered = NULL, title_container = h5, correct_label = 0xc,
                           show_only_with_section = TRUE) {
   # Capture and validate answers.
   check_dots_unnamed()
   answers <- list(...)
+
+  total_nr_answers <- length(answers)
 
   is_correct <- unlist(lapply(answers, function(answer) {
     assert_class(answer, 'tutorial_question_answer')
@@ -31,7 +34,7 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
   }), recursive = FALSE, use.names = FALSE)
   answers <- split(answers, factor(is_correct, labels = c('not_correct', 'correct')))
 
-  set.seed(digest2int(knitr::opts_current$get('label') %||% 'unnamed-chunk'))
+  set.seed(digest2int(opts_current$get('label') %||% 'unnamed-chunk'))
   # adjust answer label
   if (!is.null(correct_label)) {
     if (!isTRUE(correct_label <= 0xf)) {
@@ -49,11 +52,10 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
                                   FUN = function (answer, value) { answer$value <- value; answer }, SIMPLIFY = FALSE)
   }
 
-
   nr_answers <- if (is.null(nr_answers)) {
-    length(answers[['not_correct']])
+    total_nr_answers
   } else {
-    min(nr_answers, length(answers[['not_correct']]))
+    max(2, min(nr_answers, total_nr_answers))
   }
 
   if (length(answers[['correct']]) == 0L) {
@@ -75,7 +77,7 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
   rendered_title <- doRenderTags(title_container(render_markdown_as_html(title), class = 'panel-title'))
 
   return(structure(list(id = q_id, rendered_title = rendered_title, answers = answers, post_rendered = post_rendered,
-                        random_answer_order = random_answer_order, nr_answers = nr_answers,
+                        random_answer_order = random_answer_order, nr_answers = nr_answers, mc = isTRUE(mc),
                         show_only_with_section = isTRUE(show_only_with_section), container_class = container_class),
                    class = 'question_pool'))
 }
@@ -87,7 +89,7 @@ question_pool <- function(title, ..., nr_answers = 4, random_answer_order = TRUE
 #'
 #' @inheritParams knitr::knit_print
 #' @importFrom knitr knit_print
-#' @importFrom shiny NS uiOutput
+#' @importFrom shiny NS uiOutput radioButtons checkboxGroupInput
 #' @importFrom htmltools div
 #' @method knit_print question_pool
 #' @rdname knit_print
@@ -96,13 +98,16 @@ knit_print.question_pool <- function(x, ...) {
   x$section <- opts_current$get('stat305templates.in_section')
   ns <- NS(x$id)
 
+  input_group <- if (isTRUE(x$mc)) {
+    checkboxGroupInput(ns('answer_radios'), label = 'Answer', choices = c('N/A' = 'N/A'), selected = '')
+  } else {
+    radioButtons(ns('answer_radios'), label = 'Answer', choices = c('N/A' = 'N/A'), selected = '')
+  }
+
   ui <- div(id = ns('panel'), class = paste('panel panel-default question-pool', x$container_class, sep = ' '),
             div(class = 'panel-heading', HTML(x$rendered_title)),
-            div(class = 'panel-body',
-                radioButtons(ns('answer_radios'), label = 'Answer', choices = c('N/A' = 'N/A'), selected = ''),
-                trigger_mathjax()))
-  # too late to try to set a chunk attribute
-  # knitr::set_chunkattr(echo = FALSE)
+            div(class = 'panel-body', input_group, trigger_mathjax()))
+
   rmarkdown::shiny_prerendered_chunk('server', sprintf(
     'stat305templates:::.question_pool_prerendered_chunk(%s)', dput_object(x)))
 
@@ -117,15 +122,25 @@ knit_print.question_pool <- function(x, ...) {
   invisible(TRUE)
 }
 
-#' @importFrom shiny updateRadioButtons observeEvent
+#' @importFrom shiny updateRadioButtons updateCheckboxGroupInput observeEvent
 .question_pool_server <- function (input, output, session, question, eval_env) {
   set.seed(get_session_data('master_seed', 1L, asis = TRUE) + 10L)
-  correct_answer <- sample(question$answers[['correct']], 1L)[[1L]]
-  incorrect_answers <- sample(question$answers[['not_correct']], question$nr_answers)
-  rand_order <- sample.int(question$nr_answers + 1L)
 
-  labels <- c(list(correct_answer$label), lapply(incorrect_answers, `[[`, 'label'))
-  values <- c(correct_answer$value, sapply(incorrect_answers, `[[`, 'value'))
+  nr_answers_correct <- if (isTRUE(question$mc)) {
+    sample.int(min(length(question$answers[['correct']]), question$nr_answers), 1L)
+  } else {
+    1L
+  }
+
+  sampled_answers <- c(sample(question$answers[['correct']], nr_answers_correct),
+                       sample(question$answers[['not_correct']], question$nr_answers - nr_answers_correct))
+  rand_order <- sample.int(question$nr_answers)
+
+
+  labels <- lapply(sampled_answers, `[[`, 'label')
+  values <- sapply(sampled_answers, `[[`, 'value')
+  set_session_data(sprintf('question_pool-labels-%s', session$ns('answer_radios')),
+                   setNames(labels, values), asis = TRUE)
 
   if (!is.null(question$post_rendered)) {
     labels <- lapply(labels, function (lbl) {
@@ -144,18 +159,32 @@ knit_print.question_pool <- function(x, ...) {
     observeEvent(visible_sections[[question$section$sid]], {
       if (isTRUE(visible_sections[[question$section$sid]])) {
         # Going from not visible to visible
-        updateRadioButtons(session, inputId = 'answer_radios', selected = latest_valid_input,
-                           choiceValues = values, choiceNames = labels)
+        if (isTRUE(question$mc)) {
+          updateCheckboxGroupInput(session, inputId = 'answer_radios', selected = latest_valid_input,
+                                   choiceValues = values, choiceNames = labels)
+        } else {
+          updateRadioButtons(session, inputId = 'answer_radios', selected = latest_valid_input,
+                             choiceValues = values, choiceNames = labels)
+        }
         remote_trigger_mathjax()
       } else {
         # Going from visible to not visible
         latest_valid_input <- isolate(input$answer_radios)
-        updateRadioButtons(session, inputId = 'answer_radios', choices = c('N/A' = 'N/A'), selected = '')
+        if (isTRUE(question$mc)) {
+          updateCheckboxGroupInput(session, inputId = 'answer_radios', choices = c('N/A' = 'N/A'), selected = '')
+        } else {
+          updateRadioButtons(session, inputId = 'answer_radios', choices = c('N/A' = 'N/A'), selected = '')
+        }
       }
     })
   } else {
-    updateRadioButtons(session, inputId = 'answer_radios', selected = latest_valid_input,
-                       choiceValues = values, choiceNames = labels)
+    if (isTRUE(question$mc)) {
+      updateCheckboxGroupInput(session, inputId = 'answer_radios', selected = latest_valid_input,
+                               choiceValues = values, choiceNames = labels)
+    } else {
+      updateRadioButtons(session, inputId = 'answer_radios', selected = latest_valid_input,
+                         choiceValues = values, choiceNames = labels)
+    }
     remote_trigger_mathjax()
   }
 }

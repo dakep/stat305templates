@@ -7,9 +7,10 @@
 question_pool(
   title,
   ...,
-  nr_answers = 4,
+  nr_answers = 5,
   random_answer_order = TRUE,
   container_class = NULL,
+  mc = FALSE,
   post_rendered = NULL,
   title_container = h5,
   correct_label = 12,
@@ -21,12 +22,13 @@ question_pool(
 
 \item{...}{answer options.}
 
-\item{nr_answers}{number of incorrect answers to display. By default one correct answer and at most 4 incorrect
-answers are shown.}
+\item{nr_answers}{maximum number of answers to display. At least one correct answer will always be shown.}
 
 \item{random_answer_order}{should the order of answers be randomized?}
 
 \item{container_class}{additional HTML classes to add to the container.}
+
+\item{mc}{show as multiple choice.}
 
 \item{post_rendered}{optional function to post-process rendered text (e.g., to replace placeholders). The function
 is called with a single string marked as HTML and evaluated in the \strong{server context}.}
