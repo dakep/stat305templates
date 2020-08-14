@@ -72,7 +72,7 @@ set_session_data <- function (what, value, session = getDefaultReactiveDomain(),
   return(invisible(value))
 }
 
-#' Set the "master" seed for the package.
+#' Set/get the "master" seed for the stat305templates package.
 #'
 #' All subsequent randomizations by the `stat305templates` package are based on this master seed.
 #'
@@ -84,5 +84,12 @@ set_session_seed <- function (seed, session) {
     getDefaultReactiveDomain()
   }
   set_session_data('master_seed', seed, session)
+}
+
+#' @rdname set_session_seed
+#' @return [get_session_seed()] returns the current session seed or `NULL` if none was set.
+#' @export
+get_session_seed <- function(session) {
+  get_session_data('master_seed', session)
 }
 
