@@ -6,12 +6,13 @@
 \usage{
 enable_safe_eval(
   max_fsize = 1L,
-  envir = parent.frame(),
+  envir = new.env(),
   max_address_space = 2048L,
   max_data = 256L,
   priority = 20L,
   rlimits,
   allow_env,
+  force_safe_unix = FALSE,
   default_allow_env = c("^SHELL$", "^USER$", "^LANG$", "^LC_CTYPE$", "^HOME$",
     "^DYLD_FALLBACK_LIBRARY_PATH$", "^R_.*")
 )
@@ -31,6 +32,9 @@ enable_safe_eval(
 
 \item{allow_env}{vector of regular expressions of allowed environment variables (i.e., the matching variables will
 be retained).}
+
+\item{force_safe_unix}{force the use of the \code{\link[unix:eval_safe]{unix::eval_safe()}} function for evaluating user code.
+The \code{unix} package is not available on Windows and is not used by default on macOS.}
 
 \item{default_allow_env}{vector of regular expressions of environment variables which should be allowed by default.
 Only change if you know what you are doing, as most of them are fundamental to the R process

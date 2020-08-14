@@ -1,7 +1,7 @@
 Package: stat305templates
 Type: Package
 Title: STAT 305 Templates for learnr
-Version: 0.7.1
+Version: 0.7.2
 Authors@R: c(
     person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
@@ -17,7 +17,6 @@ Imports:
   shiny,
   shinyjs,
   rlang,
-  unix,
   uuid,
   digest,
   jsonlite,
@@ -25,6 +24,8 @@ Imports:
   openssl,
   ellipsis (>= 0.2.0.1),
   checkmate
+Suggests:
+  unix
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
