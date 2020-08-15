@@ -31,6 +31,12 @@ initialize_lab <- function (...) {
   if (isTRUE(getOption('knitr.in.progress')) && !isTRUE(opts_knit$get('stat305templates.lab.initialized'))) {
     knit_meta_add(list(html_dependency_jquery()))
 
+    # Add tutorial id
+    rm_ns <- getNamespace('rmarkdown')
+    unlockBinding('metadata', rm_ns)
+    rm_ns$metadata$tutorial <- rm_ns$metadata$lab
+    on.exit(lockBinding('metadata', rm_ns))
+
     shiny_prerendered_chunk('server', sprintf('stat305templates:::.initialize_lab_server(session, metadata = %s)',
                                               dput_object(rmarkdown::metadata$lab)), singleton = TRUE)
 
@@ -126,7 +132,8 @@ knit_print.lab_name_input <- function (x, ...) {
   opts_chunk$set('stat305templates.lab_name_ns' = ns(NULL))
   ui <- div(id = ns('name-input-panel'), class = 'panel panel-default',
             div(class = 'panel-heading', HTML(x$title)),
-            div(class = 'panel-body lab-student-name', textInput(ns('student-name'), label = x$label, placeholder = x$label)))
+            div(class = 'panel-body lab-student-name',
+                textInput(ns('student-name'), label = x$label, placeholder = x$label)))
   knit_print(ui)
 }
 
