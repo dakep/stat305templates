@@ -23,7 +23,14 @@ remote_trigger_mathjax <- function () {
 }
 
 #' Render markdown text as HTML
+#'
+#' Translate markdown into HTML elements.
+#'
+#' @param text the markdown text to be parsed as HTML
+#' @return a HTML container with the parsed markdown.
+#'
 #' @importFrom markdown markdownToHTML markdownExtensions
+#' @export
 render_markdown_as_html <- function (text) {
   if (inherits(text, 'html')) {
     return(text)

@@ -6,6 +6,12 @@
 \usage{
 render_markdown_as_html(text)
 }
+\arguments{
+\item{text}{the markdown text to be parsed as HTML}
+}
+\value{
+a HTML container with the parsed markdown.
+}
 \description{
-Render markdown text as HTML
+Translate markdown into HTML elements.
 }
