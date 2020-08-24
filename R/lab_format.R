@@ -91,11 +91,8 @@ get_lab_id <- function () {
 #' @param title title for the panel containing the text input.
 #' @param label label of the text input.
 #' @export
-lab_name_input <- function (title = "What is your name?", label = "Your name") {
-  name_input <- list(
-    label = label,
-    title = title
-  )
+lab_name_input <- function (title = "Student information", label = "Your name", label_id = 'Your student nr.') {
+  name_input <- list(label = label, label_id = label_id, title = title)
   class(name_input) <- 'lab_name_input'
   return(name_input)
 }
@@ -120,7 +117,7 @@ submit_lab_btn <- function (label = "Download answers", filename = NULL) {
 }
 
 #' @inheritParams knitr::knit_print
-#' @importFrom htmltools div
+#' @importFrom htmltools div tags
 #' @importFrom knitr knit_print opts_knit opts_chunk
 #' @importFrom shiny NS textInput
 #' @importFrom rmarkdown shiny_prerendered_chunk
@@ -131,9 +128,11 @@ knit_print.lab_name_input <- function (x, ...) {
   ns <- NS(random_ui_id(opts_current$get('label')))
   opts_chunk$set('stat305templates.lab_name_ns' = ns(NULL))
   ui <- div(id = ns('name-input-panel'), class = 'panel panel-default',
-            div(class = 'panel-heading', HTML(x$title)),
+            div(class = 'panel-heading', tags$h4(x$title)),
             div(class = 'panel-body lab-student-name',
-                textInput(ns('student-name'), label = x$label, placeholder = x$label)))
+                textInput(ns('student-name'), label = x$label, placeholder = x$label),
+                textInput(ns('student-nr'), label = x$label_id, placeholder = x$label_id),
+                div(class = 'alert alert-danger hidden')))
   knit_print(ui)
 }
 
@@ -163,9 +162,9 @@ knit_print.submit_lab_btn <- function (x, ...) {
 #' @importFrom methods is
 #' @importFrom stringr str_replace_all fixed
 #' @importFrom openssl ed25519_keygen ed25519_sign base64_encode
+#' @importFrom htmltools div
 .submit_lab_btn_prerendered_chunk <- function (options) {
   global_session <- getDefaultReactiveDomain()
-
 
   moduleServer(options$id, function (input, output, session) {
     keypair <- getOption('stat305templates.lab.keypair') %||% ed25519_keygen()
@@ -177,10 +176,11 @@ knit_print.submit_lab_btn <- function (x, ...) {
       on.exit(close(fh), add = TRUE)
 
       student_name <- isolate(input[['student-name']])
+      student_id <- isolate(input[['student-nr']])
       input_values <- isolate(reactiveValuesToList(global_session$input))
 
       rendered_inputs <- lapply(names(input_values), function (input_name) {
-        if (input_name == session$ns('student-name')) {
+        if (input_name %in% c(session$ns('student-name'), session$ns('student-nr'))) {
           return(NULL)
         }
         raw_value <- input_values[[input_name]]
@@ -214,6 +214,7 @@ knit_print.submit_lab_btn <- function (x, ...) {
       rendered_inputs <- rendered_inputs[order(sapply(rendered_inputs, `[[`, 'name'))]
 
       cat('---\nstudent: ', student_name,
+          '\nstudent_id: ', student_id,
           '\nurl: ', url,
           '\npubkey: ', base64_encode(keypair$pubkey$data),
           '\n---\n', file = fh, sep = '')
@@ -226,6 +227,7 @@ knit_print.submit_lab_btn <- function (x, ...) {
       })
 
       bytes <- c(list(charToRaw(paste('student:', student_name)),
+                      charToRaw(paste('student_id:', student_id)),
                       charToRaw(paste('url:', url))), bytes)
 
       bytes <- unlist(bytes, recursive = FALSE, use.names = FALSE)

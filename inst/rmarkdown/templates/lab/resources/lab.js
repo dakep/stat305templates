@@ -24,13 +24,24 @@ function loadShinyJs () {
 }
 
 function checkLabNameInput() {
-  const invalidInputs = $(this).filter(function () {
-    return ($(this).val().length < 3)
-  })
+  const validationContainer = $(this).find('div.alert')
+  const nameInput = $(this).find('input[id$="student-name"]').val()
+  const idInput = $(this).find('input[id$="student-nr"]').val()
+  var errorMessage = ""
+  if (nameInput.length < 3) {
+    errorMessage = "The name is incomplete."
+  } else if (idInput.length != 8) {
+    errorMessage = "The student number must be exactly 8 digits."
+  } else if (!/\d{8}/.test(idInput)) {
+    errorMessage = "The student number must contain only numbers."
+  }
 
-  if (invalidInputs.length > 0) {
+  validationContainer.text(errorMessage)
+  if (errorMessage.length > 0) {
+    validationContainer.removeClass('hidden')
     $('.submit-lab').prop('disabled', true).addClass('disabled')
   } else {
+    validationContainer.addClass('hidden')
     $('.submit-lab').prop('disabled', false).removeClass('disabled')
   }
 }
@@ -42,7 +53,7 @@ $(document).ready(function () {
   // Load shinyjs
   loadShinyJs()
 
-  $('.lab-student-name input')
+  $('.lab-student-name')
     .on('change', checkLabNameInput)
     .each(checkLabNameInput)
 

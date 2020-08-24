@@ -4,7 +4,11 @@
 \alias{lab_name_input}
 \title{Add a text input for the user's name}
 \usage{
-lab_name_input(title = "What is your name?", label = "Your name")
+lab_name_input(
+  title = "Student information",
+  label = "Your name",
+  label_id = "Your student nr."
+)
 }
 \arguments{
 \item{title}{title for the panel containing the text input.}
