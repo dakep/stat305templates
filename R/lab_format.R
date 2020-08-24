@@ -307,7 +307,8 @@ render_lab_answers <- function (filename, output_dir = NULL) {
 
   ## Add metadata info to message
   msg_bytes[[1L]] <- charToRaw(paste('student:', metadata$student_name))
-  msg_bytes[[2L]] <- charToRaw(paste('url:', metadata$url))
+  msg_bytes[[2L]] <- charToRaw(paste('student_id:', metadata$student_id))
+  msg_bytes[[3L]] <- charToRaw(paste('url:', metadata$url))
 
   # line 6: skip
   .read_line(fh, n = 1L, ok = FALSE)
@@ -351,22 +352,24 @@ render_lab_answers <- function (filename, output_dir = NULL) {
 .read_lab_answers_metadata <- function (fh) {
   seek(fh, 0L, rw = 'read', origin = 'start')
 
-  info <- list(student_name = NULL, url = NULL, pubkey = NULL)
+  info <- list(student_name = NULL, student_id = NULL, url = NULL, pubkey = NULL)
   ## Read metadata
   # line 1: skip
   .read_line(fh, n = 1L, ok = FALSE)
   # line 2: student name -- add to message
   info$student_name <- str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 10L)
-  # line 3: url -- add to message
+  # line 3: student nr -- add to message
+  info$student_id <- str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 13L)
+  # line 4: url -- add to message
   info$url <- str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 6L)
-  # line 4: public key
+  # line 5: public key
   info$pubkey <- tryCatch(
     read_ed25519_pubkey(base64_decode(str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 9L))),
     error = function (e) {
       abort("Public key cannot be read.")
     })
 
-  # line 5: skip
+  # line 6: skip
   .read_line(fh, n = 1L, ok = FALSE)
   return(info)
 }
