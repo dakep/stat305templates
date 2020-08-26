@@ -62,10 +62,10 @@ initialize_lab <- function (...) {
 }
 
 
-#' @importFrom openssl ed25519_keygen
+#' @importFrom openssl ec_keygen
 .generate_lab_key <- function () {
   if (is.null(getOption('stat305templates.lab.keypair'))) {
-    options(stat305templates.lab.keypair = ed25519_keygen())
+    options(stat305templates.lab.keypair = ec_keygen())
   }
 }
 
@@ -160,14 +160,15 @@ knit_print.submit_lab_btn <- function (x, ...) {
 }
 
 #' @importFrom methods is
-#' @importFrom stringr str_replace_all fixed
-#' @importFrom openssl ed25519_keygen ed25519_sign base64_encode
+#' @importFrom stringr str_replace_all fixed str_split
+#' @importFrom openssl ec_keygen base64_encode write_der signature_create
+#' @importFrom digest digest hmac
 #' @importFrom htmltools div
 .submit_lab_btn_prerendered_chunk <- function (options) {
   global_session <- getDefaultReactiveDomain()
 
   moduleServer(options$id, function (input, output, session) {
-    keypair <- getOption('stat305templates.lab.keypair') %||% ed25519_keygen()
+    keypair <- getOption('stat305templates.lab.keypair') %||% ec_keygen()
     url <- isolate(sprintf('%s//%s%s%s', session$clientData$url_protocol, session$clientData$url_hostname,
                            session$clientData$url_pathname, session$clientData$url_search))
 
@@ -213,26 +214,34 @@ knit_print.submit_lab_btn <- function (x, ...) {
       rendered_inputs <- rendered_inputs[!sapply(rendered_inputs, is.null)]
       rendered_inputs <- rendered_inputs[order(sapply(rendered_inputs, `[[`, 'name'))]
 
+      running_hash <- digest(paste('student:', student_name), algo = 'sha256', raw = TRUE, serialize = FALSE)
+      running_hash <- hmac(running_hash, paste('student_id:', student_id), algo = 'sha256', raw = TRUE)
+      running_hash <- hmac(running_hash, paste('url:', url), algo = 'sha256', raw = TRUE)
+
       cat('---\nstudent: ', student_name,
           '\nstudent_id: ', student_id,
           '\nurl: ', url,
-          '\npubkey: ', base64_encode(keypair$pubkey$data),
+          '\npubkey: ', base64_encode(write_der(keypair$pubkey)),
           '\n---\n', file = fh, sep = '')
 
       cat('# Answers\n', file = fh)
-      bytes <- lapply(rendered_inputs, function (input) {
-        lines <- paste('## ', input$name, '\n', input$value, '\n\n', sep = '')
-        cat(lines, file = fh)
-        return(charToRaw(lines))
-      })
+      for (input in rendered_inputs) {
+        line <- paste('## ', input$name, sep = '')
+        cat(line, '\n', file = fh, sep = '')
+        running_hash <- hmac(running_hash, line, algo = 'sha256', raw = TRUE)
 
-      bytes <- c(list(charToRaw(paste('student:', student_name)),
-                      charToRaw(paste('student_id:', student_id)),
-                      charToRaw(paste('url:', url))), bytes)
+        cat(input$value, '\n\n', file = fh, sep = '')
+        # digest input$value line-by-line
+        if (length(input$value) > 0L && !is.null(input$value)) {
+          for (line in str_split(input$value, pattern = fixed('\n'))[[1L]]) {
+            running_hash <- hmac(running_hash, line, algo = 'sha256', raw = TRUE)
+          }
+        }
+        running_hash <- hmac(running_hash, '', algo = 'sha256', raw = TRUE)
+      }
 
-      bytes <- unlist(bytes, recursive = FALSE, use.names = FALSE)
-
-      cat('---\nsignature: ', base64_encode(ed25519_sign(bytes, key = keypair)), '\n---\n', file = fh, sep = '')
+      cat('---\nsignature: ', base64_encode(signature_create(running_hash, hash = NULL, key = keypair)), '\n---\n',
+          file = fh, sep = '')
     }, contentType = 'text/plain; charset=UTF-8')
   })
 
@@ -329,7 +338,8 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
 }
 
 #' @importFrom stringr str_sub
-#' @importFrom openssl ed25519_verify base64_decode
+#' @importFrom openssl signature_verify base64_decode
+#' @importFrom digest digest hmac
 #' @importFrom rlang abort with_abort
 .validate_lab_answers <- function (filename) {
   fh <- file(filename, open = 'r', encoding = 'UTF-8')
@@ -341,15 +351,18 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   ## Read metadata
   metadata <- .read_lab_answers_metadata(fh)
 
-  ## Add metadata info to message
-  msg_bytes[[1L]] <- charToRaw(paste('student:', metadata$student_name))
-  msg_bytes[[2L]] <- charToRaw(paste('student_id:', metadata$student_id))
-  msg_bytes[[3L]] <- charToRaw(paste('url:', metadata$url))
+  ## Add metadata info to message (we need to keep track of the previous 4 hashes to backtrack at the end of the file)
+  running_hash <- vector('list', 5L)
+  running_hash[[1L]] <- digest(paste('student:', metadata$student_name), algo = 'sha256', raw = TRUE, serialize = FALSE)
+  running_hash[[1L]] <- hmac(running_hash[[1L]], paste('student_id:', metadata$student_id), algo = 'sha256', raw = TRUE)
+  running_hash[[1L]] <- hmac(running_hash[[1L]], paste('url:', metadata$url), algo = 'sha256', raw = TRUE)
 
   # line 6: skip
   .read_line(fh, n = 1L, ok = FALSE)
 
   # all next lines: read as message
+  hash_index <- 0L # this is 0 based!
+  lines_history <- vector('character', length(running_hash))
   repeat {
     line <- .read_line(fh, n = 1L)
 
@@ -357,21 +370,25 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
       break
     }
 
-    # Add the newline (0x0a) at the end!
-    msg_bytes <- c(msg_bytes, list(c(charToRaw(line), as.raw(0x0a))))
+    new_hash_index <- (hash_index + 1L) %% length(running_hash)
+    lines_history[[new_hash_index + 1L]] <- line
+    running_hash[[new_hash_index + 1L]] <- hmac(running_hash[[hash_index + 1L]], line, algo = 'sha256', raw = TRUE)
+    hash_index <- new_hash_index
   }
 
-  # The last three lines are not part of the message.
+  # The last lines are not part of the message.
+  # Use the running hash from the fifth to last line.
+  running_hash <- running_hash[[((hash_index - 4L) %% 4L) + 1L]]
   # Extract the signature from the second to last line.
-  signature_line <- rawToChar(msg_bytes[[length(msg_bytes) - 1L]])
+  signature_line <- lines_history[[((hash_index - 1L) %% 4L) + 1L]]
   if (str_sub(signature_line, end = 11L) != 'signature: ') {
     abort("No signature found in file.")
   }
 
   # Verify the signature (throws an error if the validation fails)
-  with_abort(ed25519_verify(unlist(msg_bytes[seq_len(length(msg_bytes) - 3L)]),
-                            sig = base64_decode(str_sub(signature_line, start = 12L)),
-                            pubkey = metadata$pubkey))
+  with_abort(signature_verify(running_hash, hash = NULL,
+                              sig = base64_decode(str_sub(signature_line, start = 12L)),
+                              pubkey = metadata$pubkey))
   return(TRUE)
 }
 
@@ -382,7 +399,7 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   with_abort(eval.parent(mc))
 }
 
-#' @importFrom openssl read_ed25519_pubkey base64_decode
+#' @importFrom openssl read_pubkey base64_decode
 #' @importFrom stringr str_sub
 #' @importFrom rlang abort
 .read_lab_answers_metadata <- function (fh) {
@@ -400,7 +417,7 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   info$url <- str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 6L)
   # line 5: public key
   info$pubkey <- tryCatch(
-    read_ed25519_pubkey(base64_decode(str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 9L))),
+    read_pubkey(base64_decode(str_sub(.read_line(fh, n = 1L, ok = FALSE), start = 9L))),
     error = function (e) {
       abort("Public key cannot be read.")
     })
