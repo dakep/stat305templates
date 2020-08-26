@@ -214,38 +214,64 @@ knit_print.submit_lab_btn <- function (x, ...) {
       rendered_inputs <- rendered_inputs[!sapply(rendered_inputs, is.null)]
       rendered_inputs <- rendered_inputs[order(sapply(rendered_inputs, `[[`, 'name'))]
 
-      running_hash <- digest(paste('student:', student_name), algo = 'sha256', raw = TRUE, serialize = FALSE)
-      running_hash <- hmac(running_hash, paste('student_id:', student_id), algo = 'sha256', raw = TRUE)
-      running_hash <- hmac(running_hash, paste('url:', url), algo = 'sha256', raw = TRUE)
+      running_hash <- .create_metadata_hash(list(student_name = student_name, student_id = student_id, url = url))
+      metadata <- paste('---\nstudent: ', student_name,
+                        '\nstudent_id: ', student_id,
+                        '\nurl: ', url,
+                        '\npubkey: ', base64_encode(write_der(keypair$pubkey)),
+                        '\nsignature: ', sep = '')
+      signature_pos <- nchar(metadata)
 
-      cat('---\nstudent: ', student_name,
-          '\nstudent_id: ', student_id,
-          '\nurl: ', url,
-          '\npubkey: ', base64_encode(write_der(keypair$pubkey)),
-          '\n---\n', file = fh, sep = '')
-
+      # Leave enough room for the signature.
+      cat(metadata, rep(' ', 120), '\n---\n', file = fh, sep = '')
       cat('# Answers\n', file = fh)
       for (input in rendered_inputs) {
-        line <- paste('## ', input$name, sep = '')
-        cat(line, '\n', file = fh, sep = '')
-        running_hash <- hmac(running_hash, line, algo = 'sha256', raw = TRUE)
-
-        cat(input$value, '\n\n', file = fh, sep = '')
-        # digest input$value line-by-line
-        if (length(input$value) > 0L && !is.null(input$value)) {
-          for (line in str_split(input$value, pattern = fixed('\n'))[[1L]]) {
-            running_hash <- hmac(running_hash, line, algo = 'sha256', raw = TRUE)
-          }
-        }
-        running_hash <- hmac(running_hash, '', algo = 'sha256', raw = TRUE)
+        running_hash <- .digest_cat('## ', input$name, '\n', input$value, '\n\n', prev = running_hash, file = fh)
       }
+      running_hash <- .digest_cat(prev = running_hash, file = fh, finalize = TRUE)
 
-      cat('---\nsignature: ', base64_encode(signature_create(running_hash, hash = NULL, key = keypair)), '\n---\n',
-          file = fh, sep = '')
+      # Re-position at the site of the signature
+      seek(fh, where = signature_pos, origin = 'start', rw = 'w')
+      cat(base64_encode(signature_create(running_hash$hash, hash = NULL, key = keypair)), file = fh, sep = '')
     }, contentType = 'text/plain; charset=UTF-8')
   })
 
   invisible(TRUE)
+}
+
+.create_metadata_hash <- function (metadata) {
+  running_hash <- list(hash = raw(0L), leftover = '')
+  running_hash$hash <- digest(paste('student:', metadata$student_name), algo = 'sha256', raw = TRUE, serialize = FALSE)
+  running_hash$hash <- hmac(running_hash$hash, paste('student_id:', metadata$student_id), algo = 'sha256', raw = TRUE)
+  running_hash$hash <- hmac(running_hash$hash, paste('url:', metadata$url), algo = 'sha256', raw = TRUE)
+  return(running_hash)
+}
+
+#' @importFrom stringr str_sub
+#' @importFrom digest hmac digest
+.digest_cat <- function (..., prev, file, blocksize = 8192L, finalize = FALSE) {
+  new_out_data <- if (isTRUE(finalize)) {
+    # ignore ... and print all remaining bytes
+    blocksize <- nchar(prev$leftover)
+    prev$leftover
+  } else {
+    paste(prev$leftover, ..., sep = '')
+  }
+
+  chunks_to_process <- nchar(new_out_data) %/% blocksize
+  bytes_left <- nchar(new_out_data) %% blocksize
+  for (i in seq_len(nchar(new_out_data) %/% blocksize)) {
+    chunk <- str_sub(new_out_data, start = (i - 1L) * blocksize + 1L, end = i * blocksize)
+    cat(chunk, file = file, sep = '')
+    prev$hash <- hmac(prev$hash, chunk, serialize = FALSE, raw = TRUE, algo = 'sha256')
+  }
+
+  if (isTRUE(finalize)) {
+    prev$leftover <- ''
+  } else {
+    prev$leftover <- str_sub(new_out_data, start = -bytes_left)
+  }
+  return(prev)
 }
 
 #' Render and Validate Lab Answers
@@ -341,28 +367,21 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
 #' @importFrom openssl signature_verify base64_decode
 #' @importFrom digest digest hmac
 #' @importFrom rlang abort with_abort
-.validate_lab_answers <- function (filename) {
+.validate_lab_answers <- function (filename, blocksize = 8192L) {
   fh <- file(filename, open = 'r', encoding = 'UTF-8')
   on.exit(close(fh), add = TRUE)
-
-  msg_bytes <- vector('list', 2L)
-  signature <- NULL
 
   ## Read metadata
   metadata <- .read_lab_answers_metadata(fh)
 
   ## Add metadata info to message (we need to keep track of the previous 4 hashes to backtrack at the end of the file)
-  running_hash <- vector('list', 5L)
-  running_hash[[1L]] <- digest(paste('student:', metadata$student_name), algo = 'sha256', raw = TRUE, serialize = FALSE)
-  running_hash[[1L]] <- hmac(running_hash[[1L]], paste('student_id:', metadata$student_id), algo = 'sha256', raw = TRUE)
-  running_hash[[1L]] <- hmac(running_hash[[1L]], paste('url:', metadata$url), algo = 'sha256', raw = TRUE)
+  running_hash <- .create_metadata_hash(metadata)$hash
 
   # line 6: skip
   .read_line(fh, n = 1L, ok = FALSE)
 
-  # all next lines: read as message
-  hash_index <- 0L # this is 0 based!
-  lines_history <- vector('character', length(running_hash))
+  # all next lines: read in blocks
+  buffer <- ''
   repeat {
     line <- .read_line(fh, n = 1L)
 
@@ -370,25 +389,22 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
       break
     }
 
-    new_hash_index <- (hash_index + 1L) %% length(running_hash)
-    lines_history[[new_hash_index + 1L]] <- line
-    running_hash[[new_hash_index + 1L]] <- hmac(running_hash[[hash_index + 1L]], line, algo = 'sha256', raw = TRUE)
-    hash_index <- new_hash_index
-  }
+    buffer <- paste(buffer, line, '\n', sep = '')
+    buffer_chunks <- nchar(buffer) %/% blocksize
+    bytes_left <- nchar(buffer) %% blocksize
 
-  # The last lines are not part of the message.
-  # Use the running hash from the fifth to last line.
-  running_hash <- running_hash[[((hash_index - 4L) %% 4L) + 1L]]
-  # Extract the signature from the second to last line.
-  signature_line <- lines_history[[((hash_index - 1L) %% 4L) + 1L]]
-  if (str_sub(signature_line, end = 11L) != 'signature: ') {
-    abort("No signature found in file.")
+    for (i in seq_len(buffer_chunks)) {
+      chunk <- str_sub(buffer, start = (i - 1L) * blocksize + 1L, end = i * blocksize)
+      running_hash <- hmac(running_hash, chunk, serialize = FALSE, raw = TRUE, algo = 'sha256')
+    }
+    buffer <- str_sub(buffer, start = -bytes_left)
+  }
+  if (nchar(buffer) > 0L) {
+    running_hash <- hmac(running_hash, buffer, serialize = FALSE, raw = TRUE, algo = 'sha256')
   }
 
   # Verify the signature (throws an error if the validation fails)
-  with_abort(signature_verify(running_hash, hash = NULL,
-                              sig = base64_decode(str_sub(signature_line, start = 12L)),
-                              pubkey = metadata$pubkey))
+  with_abort(signature_verify(running_hash, hash = NULL, sig = metadata$signature, pubkey = metadata$pubkey))
   return(TRUE)
 }
 
@@ -399,8 +415,15 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   with_abort(eval.parent(mc))
 }
 
+#' @importFrom rlang with_abort
+.read_chars <- function (...) {
+  mc <- match.call(expand.dots = TRUE)
+  mc[[1L]] <- quote(readChar)
+  with_abort(eval.parent(mc))
+}
+
 #' @importFrom openssl read_pubkey base64_decode
-#' @importFrom stringr str_sub
+#' @importFrom stringr str_sub str_trim
 #' @importFrom rlang abort
 .read_lab_answers_metadata <- function (fh) {
   seek(fh, 0L, rw = 'read', origin = 'start')
@@ -421,6 +444,12 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
     error = function (e) {
       abort("Public key cannot be read.")
     })
+  # line 6: signature
+  signature_line <- .read_line(fh, n = 1L, ok = FALSE)
+  if (str_sub(signature_line, end = 11L) != 'signature: ') {
+    abort("No signature found in file.")
+  }
+  info$signature <- base64_decode(str_trim(str_sub(signature_line, start = 12L), side = 'right'))
 
   # line 6: skip
   .read_line(fh, n = 1L, ok = FALSE)
