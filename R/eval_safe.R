@@ -30,7 +30,7 @@ enable_safe_eval <- function (max_fsize = 1L, envir = new.env(), max_address_spa
     c(allow_env, default_allow_env)
   }
 
-  if (isTRUE(force_safe_unix) || (Sys.info()[['sysname']] != 'Darwin' && isNamespaceLoaded('unix'))) {
+  if (isTRUE(force_safe_unix) || (Sys.info()[['sysname']] != 'Darwin' && requireNamespace('unix', quietly = TRUE))) {
     options(tutorial.exercise.evaluator = get_safe_evaluator_unix(priority, envir = envir, rlimits, allow_env))
   } else {
     warn("Using an unsafe evaluator!")

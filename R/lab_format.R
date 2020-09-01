@@ -294,8 +294,24 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
     zip_archive <- grepl('\\.zip$', filename)
   }
 
-  if (!isTRUE(zip_archive)) {
-    .render_lab_answer_file(filename, output_dir)
+  rendered_files <- if (!isTRUE(zip_archive)) {
+    if (is.null(output_dir)) {
+      output_dir <- dirname(filename)
+    }
+
+    tryCatch({
+      render_res <- .render_lab_answer_file(filename, output_dir)
+      data.frame(input = normalizePath(filename), output = render_res$output, valid = render_res$valid,
+                 message = render_res$message, stringsAsFactors = FALSE)
+    }, error = function (e) {
+      error_file <- file.path(output_dir, basename(filename))
+      if (filename != error_file) {
+        file.copy(filename, error_file)
+      }
+      warn(sprintf("Cannot render file %s", error_file))
+      data.frame(input = normalizePath(filename), output = error_file, valid = NA, message = 'rendering error',
+                 stringsAsFactors = FALSE)
+    })
   } else {
     if (is.null(output_dir)) {
       output_dir <- getwd()
@@ -305,28 +321,40 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
     on.exit(unlink(unpacked_path), add = TRUE)
 
     unzip(filename, exdir = unpacked_path, junkpaths = TRUE)
-    all_files <- list.files(unpacked_path, full.names = TRUE)
-    invisible(unlist(lapply(all_files, function (fname) {
+    all_files <- list.files(unpacked_path, full.names = FALSE)
+    do.call(rbind, lapply(all_files, function (fname) {
+      fname_path <- file.path(unpacked_path, fname)
       tryCatch({
-        output <- .render_lab_answer_file(fname, output_dir)
-        inform(sprintf("Rendered file %s", output))
-        output
+        render_res <- .render_lab_answer_file(fname_path, output_dir)
+        inform(sprintf("Rendered file %s", render_res$output))
+        data.frame(input = normalizePath(fname_path), output = render_res$output, valid = render_res$valid,
+                   message = render_res$message, stringsAsFactors = FALSE)
       }, error = function (e) {
-        error_file <- file.path(output_dir, basename(fname))
-        file.rename(fname, error_file)
+        error_file <- file.path(output_dir, fname)
+        file.rename(fname_path, error_file)
         warn(sprintf("Cannot render file %s", error_file))
-        return(error_file)
+        data.frame(input = normalizePath(fname_path), output = error_file, valid = NA,
+                   message = sprintf('rendering error (%s)', e), stringsAsFactors = FALSE)
       })
-    })))
+    }))
   }
+
+  return(invisible(rendered_files))
 }
 
 .render_lab_answer_file <- function (filename, output_dir = NULL) {
+  rendering_result <- list(output = filename, valid = FALSE, message = NA_character_)
   validation_message <- tryCatch({
     .validate_lab_answers(filename)
   }, error = function (e) {
     sprintf('<div class="alert alert-danger text-center"><p class="lead">Validation failed!</p><p>%s</p></div>', e)
   })
+
+  if (!isTRUE(validation_message)) {
+    rendering_result$message <- 'validation failed'
+  } else {
+    rendering_result$valid <- TRUE
+  }
 
   new_md <- tempfile(pattern = 'lab_answers', fileext = '.md')
   on.exit(unlink(new_md), add = TRUE)
@@ -359,8 +387,9 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
     output_dir <- dirname(filename)
   }
 
-  render(new_md, output_file = str_sub(basename(filename), end = -4L),
-         output_format = html_document(), output_dir = output_dir, quiet = TRUE)
+  rendering_result$output <- render(new_md, output_file = str_sub(basename(filename), end = -4L),
+                                    output_format = html_document(), output_dir = output_dir, quiet = TRUE)
+  return(rendering_result)
 }
 
 #' @importFrom stringr str_sub
