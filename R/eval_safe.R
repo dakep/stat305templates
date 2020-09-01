@@ -72,27 +72,39 @@ get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
 
     return(list(
       start = function() {
-        result <<- tryCatch(
+        eval_result <- tryCatch(
           rlang::with_abort(evalq(unix::eval_safe({
+            eval_result <- list(usercode = NULL, setup = NULL)
             clear_env()
-            tryCatch({
+            add_to_envir <- tryCatch({
               .setup <- parse(text = trimws(exercise$options$exercise.checker, whitespace = '"'))
-              add_to_envir <- eval(.setup, eval_envir)
+              eval(.setup, eval_envir)
+            }, error = function (e) {
+              eval_result$setup <- paste("Cannot evaluate setup chunk: ", e)
+              return(NULL)
+            })
+            if (!is.null(add_to_envir)) {
               for (newvar in names(add_to_envir)) {
                 assign(newvar, add_to_envir[[newvar]], envir = eval_envir)
               }
-              rm(.setup, add_to_envir)
-            }, error = function (e) {
-              rlang::warn(paste("Cannot evaluate setup chunk: ", e))
-            }, warning = function (w) {})
-            eval(expr)
+              rm(newvar)
+            }
+            rm(.setup, add_to_envir)
+            eval_result$usercode <- eval(expr)
+            eval_result
           }, timeout = timeout, priority = priority, rlimits = rlimits), envir = outer_envir)),
           error = function (e) {
-            print(e)
-            return(list(feedback = NULL,
-                        error_message = as.character(e),
-                        html_output = div(class = 'alert alert-danger', role = 'alert', as.character(e))))
+            rlang::warn(as.character(e))
+            return(list(usercode = list(feedback = NULL,
+                                        error_message = as.character(e),
+                                        html_output = div(class = 'alert alert-danger', role = 'alert',
+                                                          as.character(e))),
+                        setup = NULL))
           })
+        result <<- eval_result$usercode
+        if (!is.null(eval_result$setup)) {
+          warn(eval_result$setup)
+        }
       },
       completed = function() {
         return(TRUE)
@@ -126,16 +138,20 @@ get_safe_evaluator_other <- function (envir) {
       start = function() {
         result <<- tryCatch(
           rlang::with_abort(evalq({
-            tryCatch({
+            add_to_envir <- tryCatch({
               .setup <- parse(text = trimws(exercise$options$exercise.checker, whitespace = '"'))
-              add_to_envir <- eval(.setup, eval_envir)
+              eval(.setup, eval_envir)
+            }, error = function (e) {
+              rlang::warn(paste("Cannot evaluate setup chunk: ", e))
+              return(NULL)
+            })
+            if (!is.null(add_to_envir)) {
               for (newvar in names(add_to_envir)) {
                 assign(newvar, add_to_envir[[newvar]], envir = eval_envir)
               }
-              rm(newvar, .setup, add_to_envir)
-            }, error = function (e) {
-              rlang::warn(paste("Cannot evaluate setup chunk: ", e))
-            }, warning = function (w) {})
+              rm(newvar)
+            }
+            rm(.setup, add_to_envir)
             eval(expr)
           }, envir = outer_envir)),
           error = function (e) {
