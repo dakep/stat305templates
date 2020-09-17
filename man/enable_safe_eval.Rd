@@ -33,7 +33,7 @@ enable_safe_eval(
 \item{allow_env}{vector of regular expressions of allowed environment variables (i.e., the matching variables will
 be retained).}
 
-\item{force_safe_unix}{force the use of the \code{\link[unix:eval_safe]{unix::eval_safe()}} function for evaluating user code.
+\item{force_safe_unix}{force the use of the \code{\link[unix:eval_fork]{unix::eval_safe()}} function for evaluating user code.
 The \code{unix} package is not available on Windows and is not used by default on macOS.}
 
 \item{default_allow_env}{vector of regular expressions of environment variables which should be allowed by default.

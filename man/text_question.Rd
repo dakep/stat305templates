@@ -22,9 +22,9 @@ text_question(
 \item{textarea}{if \code{TRUE} (default) uses a HTML \emph{textarea} element for the input.
 If \code{FALSE}, uses an \emph{input} element.}
 
-\item{width}{the width of the input, e.g., '300px' or '100\%'; see \code{\link[shiny:validateCssUnit]{shiny::validateCssUnit()}}.}
+\item{width}{the width of the input, e.g., '300px' or '100\%'; see \code{\link[shiny:reexports]{shiny::validateCssUnit()}}.}
 
-\item{height}{the height of the input, e.g., '300px' or '100\%'; see \code{\link[shiny:validateCssUnit]{shiny::validateCssUnit()}}.
+\item{height}{the height of the input, e.g., '300px' or '100\%'; see \code{\link[shiny:reexports]{shiny::validateCssUnit()}}.
 Only has an effect if \code{textarea=TRUE}.}
 
 \item{placeholder}{A character string giving the user a hint as to what can be entered into the control.

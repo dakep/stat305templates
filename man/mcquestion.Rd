@@ -14,10 +14,10 @@ mcquestion(
 )
 }
 \arguments{
-\item{..., type, allow_retry, random_answer_order}{see \link[learnr:question]{learnr::question} for these parameters}
+\item{..., type, allow_retry, random_answer_order}{see \link[learnr:quiz]{learnr::question} for these parameters}
 
 \item{correct}{a vector of strings to be displayed for correct answers. One of these strings is chosen at random.}
 }
 \description{
-Wrapper around \link[learnr:question]{learnr::question} with sensible defaults for multiple choice questions.
+Wrapper around \link[learnr:quiz]{learnr::question} with sensible defaults for multiple choice questions.
 }

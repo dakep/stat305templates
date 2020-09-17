@@ -1,7 +1,7 @@
 Package: stat305templates
 Type: Package
 Title: STAT 305 Templates for learnr
-Version: 0.7.11
+Version: 0.7.12
 Authors@R: c(
     person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
@@ -29,4 +29,4 @@ Suggests:
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1

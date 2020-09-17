@@ -4,12 +4,12 @@
 \alias{submit_lab_btn}
 \title{Add a button to submit the lab.}
 \usage{
-submit_lab_btn(label = "Download answers", filename = NULL)
+submit_lab_btn(label = "Download answers", filename = "lab_answers.md")
 }
 \arguments{
 \item{label}{button label}
 
-\item{filename}{name of the file offered to the user for download. Defaults to the title of the Rmd document.}
+\item{filename}{name of the file offered to the user for download. The file extension is irrelevant.}
 }
 \description{
 A name input needs to be placed \emph{before} the submit button using \code{\link[=lab_name_input]{lab_name_input()}}.

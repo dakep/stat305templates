@@ -102,11 +102,11 @@ lab_name_input <- function (title = "Student information", label = "Your name", 
 #' A name input needs to be placed *before* the submit button using [lab_name_input()].
 #'
 #' @param label button label
-#' @param filename name of the file offered to the user for download. Defaults to the title of the Rmd document.
+#' @param filename name of the file offered to the user for download. The file extension is irrelevant.
 #' @export
 #' @importFrom htmltools tags
 #' @importFrom knitr opts_current
-submit_lab_btn <- function (label = "Download answers", filename = NULL) {
+submit_lab_btn <- function (label = "Download answers", filename = 'lab_answers.md') {
   submit_lab <- list(
     label = label,
     filename = filename
@@ -172,7 +172,7 @@ knit_print.submit_lab_btn <- function (x, ...) {
     url <- isolate(sprintf('%s//%s%s%s', session$clientData$url_protocol, session$clientData$url_hostname,
                            session$clientData$url_pathname, session$clientData$url_search))
 
-    output$download <- downloadHandler(filename = 'lab_answers.md', content = function (fname) {
+    output$download <- downloadHandler(filename = options$filename, content = function (fname) {
       fh <- file(fname, open = 'w', encoding = 'UTF-8')
       on.exit(close(fh), add = TRUE)
 
@@ -287,7 +287,7 @@ knit_print.submit_lab_btn <- function (x, ...) {
 #' @export
 #'
 #' @importFrom rmarkdown render html_document
-#' @importFrom stringr str_sub
+#' @importFrom stringr str_sub str_remove
 #' @importFrom rlang inform warn
 render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   if (missing(zip_archive)) {
@@ -387,7 +387,7 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
     output_dir <- dirname(filename)
   }
 
-  rendering_result$output <- render(new_md, output_file = str_sub(basename(filename), end = -4L),
+  rendering_result$output <- render(new_md, output_file = str_remove(basename(filename), '\\.[^\\s\\.]+$'),
                                     output_format = html_document(), output_dir = output_dir, quiet = TRUE)
   return(rendering_result)
 }
