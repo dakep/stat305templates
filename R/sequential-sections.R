@@ -68,6 +68,7 @@ init_sections <- function (sections, hide = TRUE, randomize_order = FALSE, sessi
 }
 
 ## Reorder the sections based on strata.
+#' @importFrom stats na.omit
 .reorder_sections <- function (sections, strata) {
   gid <- attr(sections, 'gid', TRUE)
   uq_strata <- unique(na.omit(strata))
@@ -337,6 +338,8 @@ knit_print.sequential_section_end <- function (x, ...) {
 }
 
 #' @importFrom shinyjs runjs
+#' @importFrom stats setNames
+#' @importFrom shiny isolate
 .init_sections_module <- function (input, output, session, sections, hide = TRUE) {
   # Preserve the order of sections.
   section_order <- lapply(sections, `[[`, 'next_sid')

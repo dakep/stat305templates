@@ -1,7 +1,7 @@
 Package: stat305templates
 Type: Package
 Title: STAT 305 Templates for learnr
-Version: 0.7.12
+Version: 0.7.13
 Authors@R: c(
     person("David", "Kepplinger", , "david.kepplinger@gmail.com",
         role = c("aut", "cre"))
@@ -12,6 +12,10 @@ Depends:
   learnr
 Imports:
   rmarkdown,
+  htmltools,
+  markdown,
+  methods,
+  stringr,
   RPostgres,
   DBI,
   shiny,
@@ -25,7 +29,8 @@ Imports:
   ellipsis (>= 0.2.0.1),
   checkmate
 Suggests:
-  unix
+  unix,
+  testthat
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

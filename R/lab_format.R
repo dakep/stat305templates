@@ -164,6 +164,7 @@ knit_print.submit_lab_btn <- function (x, ...) {
 #' @importFrom openssl ec_keygen base64_encode write_der signature_create
 #' @importFrom digest digest hmac
 #' @importFrom htmltools div
+#' @importFrom shiny isolate reactiveValues moduleServer downloadHandler
 .submit_lab_btn_prerendered_chunk <- function (options) {
   global_session <- getDefaultReactiveDomain()
 
@@ -289,6 +290,7 @@ knit_print.submit_lab_btn <- function (x, ...) {
 #' @importFrom rmarkdown render html_document
 #' @importFrom stringr str_sub str_remove
 #' @importFrom rlang inform warn
+#' @importFrom utils unzip
 render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   if (missing(zip_archive)) {
     zip_archive <- grepl('\\.zip$', filename)
@@ -397,7 +399,7 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
 #' @importFrom digest digest hmac
 #' @importFrom rlang abort with_abort
 .validate_lab_answers <- function (filename, blocksize = 8192L) {
-  fh <- file(filename, open = 'r', encoding = 'UTF-8')
+  fh <- file(filename, open = 'rt', encoding = 'UTF-8')
   on.exit(close(fh), add = TRUE)
 
   ## Read metadata
