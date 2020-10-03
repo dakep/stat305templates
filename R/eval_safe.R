@@ -41,8 +41,8 @@ enable_safe_eval <- function (max_fsize = 1L, envir = new.env(), max_address_spa
 
 ## Get a function to safely evaluate user code.
 ##
-#' @param priority,rlimits,allow_env see [enable_safe_eval] for details.
-#' @return a `function(expr, timeout)` which evaluates the given expression `expr` safely in at most `timeout` seconds.
+## @param priority,rlimits,allow_env see [enable_safe_eval] for details.
+## @return a `function(expr, timeout)` which evaluates the given expression `expr` safely in at most `timeout` seconds.
 #' @importFrom shiny div
 #' @importFrom rlang warn abort with_abort
 get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {

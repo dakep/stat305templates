@@ -29,26 +29,34 @@ expect_valid <- function (object, valid = TRUE) {
   invisible(act$val)
 }
 
-test_that("Validate valid file", {
-  valid_file <- system.file('tests/valid_signature.md', package = 'stat305templates')
+test_that("Validate valid files", {
+  test_files_path <- system.file('tests', package = 'stat305templates')
+
+  test_files <- list.files(test_files_path, pattern = '^valid_', full.names = TRUE)
   tmp_dir <- tempfile('render')
   on.exit(unlink(tmp_dir), add = TRUE, after = FALSE)
   dir.create(tmp_dir, mode = '0700')
 
-  render_lab_answers(valid_file, output_dir = tmp_dir)
-  rendered_file <- file.path(tmp_dir, 'valid_signature.html')
-  expect_true(file.exists(rendered_file))
-  expect_valid(rendered_file, valid = TRUE)
+  for (file in test_files) {
+    rendered <- render_lab_answers(file, output_dir = tmp_dir)
+    expect_true(file.exists(rendered$output))
+    expect_match(rendered$output, regexp = '\\.html$')
+    expect_valid(rendered$output, valid = TRUE)
+  }
 })
 
 test_that("Validate an invalid file", {
-  invalid_file <- system.file('tests/invalid_signature.md', package = 'stat305templates')
+  test_files_path <- system.file('tests', package = 'stat305templates')
+
+  test_files <- list.files(test_files_path, pattern = '^invalid_', full.names = TRUE)
   tmp_dir <- tempfile('render')
   on.exit(unlink(tmp_dir), add = TRUE, after = FALSE)
   dir.create(tmp_dir, mode = '0700')
 
-  render_lab_answers(invalid_file, output_dir = tmp_dir)
-  rendered_file <- file.path(tmp_dir, 'invalid_signature.html')
-  expect_true(file.exists(rendered_file))
-  expect_valid(rendered_file, valid = FALSE)
+  for (file in test_files) {
+    rendered <- render_lab_answers(file, output_dir = tmp_dir)
+    expect_true(file.exists(rendered$output))
+    expect_match(rendered$output, regexp = '\\.html$')
+    expect_valid(rendered$output, valid = FALSE)
+  }
 })

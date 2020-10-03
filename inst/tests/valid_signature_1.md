@@ -1,14 +1,14 @@
 ---
-student: Santa Ono
+student: David K
 student_id: 10101010
 url: http://127.0.0.1/lab_04.Rmd
 pubkey: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECEBmlRqws4b7xZSp4dhunPFrpRXbsqF9gPIsihjqOqC3lSpqnvenZmx3WD9A1+uw65vbCYfbyGIav343Y1frVg==
-signature: MEYCIQCtxksHFKhvneJbyCtLrALRrhdqVt5uG0DQwb5l47rOSQIhAIH4V10Me3plx7Ubci+ZXLBBHX5cBCtuB1ww69UUOoEe;MEYCIQChEz+v4AqGA4pIssu18YdbqjKvKuC7uH+FMYnzDTA4zAIhAJlR6o7MmWjOKPBaZo7xCyhkGjcpdHdCbO8xOqkey8h9
+signature: MEYCIQCtxksHFKhvneJbyCtLrALRrhdqVt5uG0DQwb5l47rOSQIhAIH4V10Me3plx7Ubci+ZXLBBHX5cBCtuB1ww69UUOoEe;MEYCIQChEz+v4AqGA4pIssu18YdbqjKvKuC7uH+FMYnzDTA4zAIhAJlR6o7MmWjOKPBaZo7xCyhkGjcpdHdCbO8xOqkey8h9                        
 ---
 # Answers
 ## applet_idv
 ```
-125.212
+125
 ```
 
 

@@ -1,5 +1,5 @@
 ---
-student: Santa Ono
+student: David K
 student_id: 10101010
 url: http://127.0.0.1/lab_04.Rmd
 pubkey: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECEBmlRqws4b7xZSp4dhunPFrpRXbsqF9gPIsihjqOqC3lSpqnvenZmx3WD9A1+uw65vbCYfbyGIav343Y1frVg==
@@ -8,11 +8,11 @@ signature: MEYCIQCtxksHFKhvneJbyCtLrALRrhdqVt5uG0DQwb5l47rOSQIhAIH4V10Me3plx7Ubc
 # Answers
 ## applet_idv
 ```
-125.212
+125
 ```
 
 
-## applet_n
+## applet  _n
 ```
 100
 ```
@@ -79,13 +79,9 @@ chisq.test(observed_frequencies, correct = FALSE)
 <pre><code>     [,1] [,2]
 [1,]   28   13
 [2,]   43   41</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test
-
+<pre><code>Pearson&#39;s Chi-squared test
 data:  observed_frequencies
 X-squared = 3.2842, df = 1, p-value = 0.06995</code></pre>
-
-
 
 
 ## q2a_1-condition1-31a117b8-text
@@ -152,5 +148,3 @@ d
 ```
 d
 ```
-
-
