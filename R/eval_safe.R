@@ -61,7 +61,7 @@ get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
   }
   outer_envir$eval_envir <- envir
 
-  return(function (expr, timeout) {
+  return(function (expr, timeout, ...) {
     result <- NULL
     outer_envir$expr <- substitute(expr)
     outer_envir$timeout <- timeout
@@ -71,7 +71,7 @@ get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
     outer_envir$evaluate_exercise <- learnr:::evaluate_exercise
 
     return(list(
-      start = function() {
+      start = function(...) {
         eval_result <- tryCatch(
           rlang::with_abort(evalq(unix::eval_safe({
             eval_result <- list(usercode = NULL, setup = NULL)
@@ -106,10 +106,10 @@ get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
           warn(eval_result$setup)
         }
       },
-      completed = function() {
+      completed = function(...) {
         return(TRUE)
       },
-      result = function() {
+      result = function(...) {
         return(result)
       }
     ))
@@ -125,7 +125,7 @@ get_safe_evaluator_other <- function (envir) {
   outer_envir <- new.env()
   outer_envir$eval_envir <- envir
 
-  return(function (expr, timeout) {
+  return(function (expr, timeout, ...) {
     result <- NULL
     outer_envir$expr <- substitute(expr)
     outer_envir$timeout <- timeout
@@ -135,7 +135,7 @@ get_safe_evaluator_other <- function (envir) {
     outer_envir$evaluate_exercise <- learnr:::evaluate_exercise
 
     return(list(
-      start = function() {
+      start = function(...) {
         result <<- tryCatch(
           rlang::with_abort(evalq({
             add_to_envir <- tryCatch({
@@ -160,10 +160,10 @@ get_safe_evaluator_other <- function (envir) {
                         html_output = div(class = 'alert alert-danger', role = 'alert', as.character(e))))
           })
       },
-      completed = function() {
+      completed = function(...) {
         return(TRUE)
       },
-      result = function() {
+      result = function(...) {
         return(result)
       }
     ))
