@@ -1,5 +1,5 @@
 ---
-student: Santa Ono
+student: David K
 student_id: 10101010
 url: http://127.0.0.1/lab_04.Rmd
 pubkey: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECEBmlRqws4b7xZSp4dhunPFrpRXbsqF9gPIsihjqOqC3lSpqnvenZmx3WD9A1+uw65vbCYfbyGIav343Y1frVg==
@@ -8,7 +8,7 @@ signature: MEYCIQCtxksHFKhvneJbyCtLrALRrhdqVt5uG0DQwb5l47rOSQIhAIH4V10Me3plx7Ubc
 # Answers
 ## applet_idv
 ```
-125.212
+125.3
 ```
 
 

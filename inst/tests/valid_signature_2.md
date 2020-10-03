@@ -1,5 +1,5 @@
 ---
-student: Santa Ono
+student: David K
 student_id: 10101010
 url: http://127.0.0.1/lab_04.Rmd
 pubkey: MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAECEBmlRqws4b7xZSp4dhunPFrpRXbsqF9gPIsihjqOqC3lSpqnvenZmx3WD9A1+uw65vbCYfbyGIav343Y1frVg==
@@ -8,15 +8,13 @@ signature: MEYCIQCtxksHFKhvneJbyCtLrALRrhdqVt5uG0DQwb5l47rOSQIhAIH4V10Me3plx7Ubc
 # Answers
 ## applet_idv
 ```
-125.212
+125           
 ```
-
 
 ## applet_n
 ```
-100
+100       
 ```
-
 
 ## applet_p1
 ```
@@ -114,19 +112,16 @@ asdf
 
 ## q2c_1-condition3-3f2dc821-text
 ```
-123
+12  3
 ```
-
-
 ## q2c_2-condition3-discussion-65891582-text
 ```
-asdf
+as d f
 ```
-
 
 ## q2d_1-condition4-1f170046-text
 ```
-123
+12 3
 ```
 
 
@@ -135,22 +130,17 @@ asdf
 asdf
 ```
 
-
 ## zz_group-helped_most_first
 ```
 d
 ```
-
 
 ## zz_group-helped_most_last
 ```
 d
 ```
 
-
 ## zz_group-member_names
 ```
 d
 ```
-
-

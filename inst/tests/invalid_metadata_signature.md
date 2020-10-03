@@ -8,7 +8,7 @@ signature: MEYCIQCtxksHFKhvneJbyCtLrALRrhdqVt5uG0DQwb5l47rOSQIhAIH4V10Me3plx7Ubc
 # Answers
 ## applet_idv
 ```
-125.212
+125
 ```
 
 
