@@ -205,8 +205,9 @@ knit_print.submit_lab_btn <- function (x, ...) {
             selected <- sort(raw_value)
             paste(sprintf('- %s [%s]', qp_labels[selected], selected), collapse = '\n')
           } else {
-            # Something else...
-            sprintf('```\n%s\n```\n', raw_value)
+            # Something else... Need to ensure only a single character is returned (e.g., for inputs with multiple
+            # elements)
+            sprintf('```\n%s\n```\n', paste(raw_value, collapse = ', '))
           }
         }
         list(name = label, value = value)
@@ -227,7 +228,6 @@ knit_print.submit_lab_btn <- function (x, ...) {
       # Leave enough room for the signature.
       cat(metadata, rep(' ', 120), '\n---\n', file = fh, sep = '')
       cat('# Answers\n', file = fh)
-
       running_hash <- NULL
       for (input in rendered_inputs) {
         running_hash <- .digest_cat('## ', input$name, '\n', input$value, '\n\n', prev = running_hash, file = fh)
@@ -250,7 +250,6 @@ knit_print.submit_lab_btn <- function (x, ...) {
     prev <- list(hash = raw(0L), leftover = '')
   }
 
-
   new_hash_data <- if (isTRUE(finalize)) {
     # ignore ... and print all remaining bytes
     blocksize <- nchar(prev$leftover)
@@ -262,9 +261,9 @@ knit_print.submit_lab_btn <- function (x, ...) {
     paste(prev$leftover, str_remove_all(paste(..., sep = ''), '\\s'), sep = '')
   }
 
-  chunks_to_process <- nchar(new_hash_data) %/% blocksize
+  chunks <- nchar(new_hash_data) %/% blocksize
   bytes_left <- nchar(new_hash_data) %% blocksize
-  for (i in seq_len(nchar(new_hash_data) %/% blocksize)) {
+  for (i in seq_len(chunks)) {
     chunk <- str_sub(new_hash_data, start = (i - 1L) * blocksize + 1L, end = i * blocksize)
     prev$hash <- hmac(prev$hash, chunk, serialize = FALSE, raw = TRUE, algo = 'sha256')
   }
