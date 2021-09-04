@@ -86,13 +86,26 @@ get_lab_id <- function () {
 }
 
 
-#' Add a text input for the user's name
+#' Add a text input for the user's name and id
 #'
-#' @param title title for the panel containing the text input.
-#' @param label label of the text input.
+#' @param title title for the panel containing the name input.
+#' @param label label of the name input.
+#' @param label_id label for the input for the student number (id). If `NULL`, the input
+#'   will not be shown.
+#' @param error_name_empty,error_id_wrong_length,error_id_wrong_format error messages for
+#'   an empty name input, or a wrong id input. If the error message is `NULL`, the check
+#'   is disabled.
 #' @export
-lab_name_input <- function (title = "Student information", label = "Your name", label_id = 'Your student nr.') {
-  name_input <- list(label = label, label_id = label_id, title = title)
+lab_name_input <- function (title = "Student information", label = "Your name",
+                            label_id = 'Your student nr.',
+                            error_name_empty = "Your name must not be empty.",
+                            error_id_wrong_length = "The student number must be 8 digits.",
+                            error_id_wrong_format = "The student number must be 8 digits.") {
+  name_input <- list(label = label, label_id = label_id, title = title,
+                     error_name_empty = error_name_empty,
+                     error_id_wrong_length = error_id_wrong_length,
+                     error_id_wrong_format = error_id_wrong_format)
+
   class(name_input) <- 'lab_name_input'
   return(name_input)
 }
@@ -121,21 +134,34 @@ submit_lab_btn <- function (label = "Download answers", filename = 'lab_answers.
 #' @importFrom knitr knit_print opts_knit opts_chunk
 #' @importFrom shiny NS textInput
 #' @importFrom rmarkdown shiny_prerendered_chunk
+#' @importFrom jsonlite toJSON
 #' @method knit_print lab_name_input
 #' @rdname knit_print
 #' @export
 knit_print.lab_name_input <- function (x, ...) {
   ns <- NS(random_ui_id(opts_current$get('label')))
+
+  error_msgs <- list('studentNameEmpty' = x$error_name_empty)
+
+  nr_input <- textInput(ns('student-nr'), label = x$label_id, placeholder = x$label_id)
+  if (is.null(x$label_id)) {
+    nr_input <- div(class = "hidden", nr_input)
+  } else {
+    error_msgs$studentIdWrongLength <- x$error_id_wrong_length
+    error_msgs$studentIdWrongFormat <- x$error_id_wrong_format
+  }
+
+
   opts_chunk$set('stat305templates.lab_name_ns' = ns(NULL))
   ui <- div(id = ns('name-input-panel'), class = 'panel panel-default',
             div(class = 'panel-heading', tags$h4(x$title)),
             div(class = 'panel-body lab-student-name',
                 textInput(ns('student-name'), label = x$label, placeholder = x$label),
-                textInput(ns('student-nr'), label = x$label_id, placeholder = x$label_id),
-                div(class = 'alert alert-danger hidden')))
+                nr_input,
+                div(class = 'alert alert-danger hidden',
+                    `data-messages` = toJSON(error_msgs, auto_unbox = TRUE, null = 'null'))))
   knit_print(ui)
 }
-
 
 #' @inheritParams knitr::knit_print
 #' @importFrom htmltools div
@@ -180,6 +206,10 @@ knit_print.submit_lab_btn <- function (x, ...) {
       student_name <- isolate(input[['student-name']])
       student_id <- isolate(input[['student-nr']])
       input_values <- isolate(reactiveValuesToList(global_session$input))
+
+      if (is.null(student_id)) {
+        student_id <- ''
+      }
 
       rendered_inputs <- lapply(names(input_values), function (input_name) {
         if (input_name %in% c(session$ns('student-name'), session$ns('student-nr'))) {

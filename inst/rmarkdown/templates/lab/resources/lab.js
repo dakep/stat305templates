@@ -27,13 +27,17 @@ function checkLabNameInput() {
   const validationContainer = $(this).find('div.alert')
   const nameInput = $(this).find('input[id$="student-name"]').val()
   const idInput = $(this).find('input[id$="student-nr"]').val()
+  const errorMessages = validationContainer.data('messages')
+
   var errorMessage = ""
-  if (nameInput.length < 3) {
-    errorMessage = "The name is incomplete."
-  } else if (idInput.length != 8) {
-    errorMessage = "The student number must be exactly 8 digits."
-  } else if (!/\d{8}/.test(idInput)) {
-    errorMessage = "The student number must contain only numbers."
+  if (errorMessages.studentNameEmpty && nameInput.length < 3) {
+    errorMessage = errorMessages.studentNameEmpty
+  } else if (errorMessages.studentIdWrongLength && idInput.length != 8) {
+    errorMessage = errorMessages.studentIdWrongLength
+    errorMessage = "The " + labels.studentId.toLowerCase() + " must be exactly 8 digits."
+  } else if (errorMessages.studentIdWrongFormat && !/\d{8}/.test(idInput)) {
+    errorMessage = errorMessages.studentIdWrongFormat
+    errorMessage = "The " + labels.studentId.toLowerCase() + " must contain only numbers."
   }
 
   validationContainer.text(errorMessage)

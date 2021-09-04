@@ -2,19 +2,29 @@
 % Please edit documentation in R/lab_format.R
 \name{lab_name_input}
 \alias{lab_name_input}
-\title{Add a text input for the user's name}
+\title{Add a text input for the user's name and id}
 \usage{
 lab_name_input(
   title = "Student information",
   label = "Your name",
-  label_id = "Your student nr."
+  label_id = "Your student nr.",
+  error_name_empty = "Your name must not be empty.",
+  error_id_wrong_length = "The student number must be 8 digits.",
+  error_id_wrong_format = "The student number must be 8 digits."
 )
 }
 \arguments{
-\item{title}{title for the panel containing the text input.}
+\item{title}{title for the panel containing the name input.}
 
-\item{label}{label of the text input.}
+\item{label}{label of the name input.}
+
+\item{label_id}{label for the input for the student number (id). If \code{NULL}, the input
+will not be shown.}
+
+\item{error_name_empty, error_id_wrong_length, error_id_wrong_format}{error messages for
+an empty name input, or a wrong id input. If the error message is \code{NULL}, the check
+is disabled.}
 }
 \description{
-Add a text input for the user's name
+Add a text input for the user's name and id
 }
