@@ -1,5 +1,5 @@
 if (require(testthat)) {
-  library(pyinit)
+  library(stat305templates)
   test_check("stat305templates")
 } else {
   warning("'stat305templates' requires 'testthat' for tests.")
