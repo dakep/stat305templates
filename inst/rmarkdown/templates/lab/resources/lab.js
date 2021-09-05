@@ -34,10 +34,8 @@ function checkLabNameInput() {
     errorMessage = errorMessages.studentNameEmpty
   } else if (errorMessages.studentIdWrongLength && idInput.length != 8) {
     errorMessage = errorMessages.studentIdWrongLength
-    errorMessage = "The " + labels.studentId.toLowerCase() + " must be exactly 8 digits."
   } else if (errorMessages.studentIdWrongFormat && !/\d{8}/.test(idInput)) {
     errorMessage = errorMessages.studentIdWrongFormat
-    errorMessage = "The " + labels.studentId.toLowerCase() + " must contain only numbers."
   }
 
   validationContainer.text(errorMessage)
