@@ -196,14 +196,12 @@ render_lab_answers <- function (filename, output_dir = NULL, zip_archive) {
   return(valid)
 }
 
-#' @importFrom rlang with_abort
 .read_line <- function (...) {
   mc <- match.call(expand.dots = TRUE)
   mc[[1L]] <- quote(readLines)
   with_abort(eval.parent(mc))
 }
 
-#' @importFrom rlang with_abort
 .read_chars <- function (...) {
   mc <- match.call(expand.dots = TRUE)
   mc[[1L]] <- quote(readChar)

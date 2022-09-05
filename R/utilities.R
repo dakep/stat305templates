@@ -100,3 +100,16 @@ get_session_seed <- function(session) {
   get_session_data('master_seed', session)
 }
 
+#' @importFrom rlang try_fetch
+with_abort <- function (expr) {
+  try_fetch(
+    expr,
+    simpleError = function(cnd) {
+      abort(
+        conditionMessage(cnd),
+        call = conditionCall(cnd),
+        parent = NA
+      )
+    }
+  )
+}

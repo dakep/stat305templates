@@ -44,7 +44,7 @@ enable_safe_eval <- function (max_fsize = 1L, envir = new.env(), max_address_spa
 ## @param priority,rlimits,allow_env see [enable_safe_eval] for details.
 ## @return a `function(expr, timeout)` which evaluates the given expression `expr` safely in at most `timeout` seconds.
 #' @importFrom shiny div
-#' @importFrom rlang warn abort with_abort
+#' @importFrom rlang warn abort
 get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
   # Clear the environment before evaluating the call.
   outer_envir <- new.env()
@@ -73,7 +73,7 @@ get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
     return(list(
       start = function(...) {
         eval_result <- tryCatch(
-          rlang::with_abort(evalq(unix::eval_safe({
+          with_abort(evalq(unix::eval_safe({
             eval_result <- list(usercode = NULL, setup = NULL)
             clear_env()
             add_to_envir <- tryCatch({
@@ -119,7 +119,7 @@ get_safe_evaluator_unix <- function (priority, envir, rlimits, allow_env) {
 ## Get a function to safely evaluate user code.
 ##
 #' @importFrom shiny div
-#' @importFrom rlang warn abort with_abort
+#' @importFrom rlang warn abort
 get_safe_evaluator_other <- function (envir) {
   # Clear the environment before evaluating the call.
   outer_envir <- new.env()
@@ -137,7 +137,7 @@ get_safe_evaluator_other <- function (envir) {
     return(list(
       start = function(...) {
         result <<- tryCatch(
-          rlang::with_abort(evalq({
+          with_abort(evalq({
             add_to_envir <- tryCatch({
               .setup <- parse(text = trimws(exercise$options$exercise.checker, whitespace = '"'))
               eval(.setup, eval_envir)
