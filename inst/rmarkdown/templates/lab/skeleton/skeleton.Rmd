@@ -15,3 +15,25 @@ knitr::opts_chunk$set(echo = FALSE)
 # Setup safe evaluation.
 enable_safe_eval()
 ```
+
+
+```{r}
+# Input for the student's name.
+# This input MUST BE PRESENT somewhere on the page, and before
+# the download button.
+lab_name_input()
+```
+
+## Q1: Good question!
+
+Here you can place your questions, R code boxes, etc.
+
+
+```{r}
+# Button to download the answers.
+# This button MUST BE PRESENT and should be placed at the end of the file!
+submit_lab_btn(filename = 'lab_answers.html',
+               require_validation = FALSE,
+               render_html = TRUE)
+```
+

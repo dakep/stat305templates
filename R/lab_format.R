@@ -116,13 +116,25 @@ lab_name_input <- function (title = "Student information", label = "Your name",
 #'
 #' @param label button label
 #' @param filename name of the file offered to the user for download. The file extension is irrelevant.
+#' @param require_validation create a markdown file with validation information.
+#' @param render_html directly render the lab as HTML instead of outputting a markdown file.
+#'   If `TRUE`, validation metadata cannot be included.
 #' @export
 #' @importFrom htmltools tags
 #' @importFrom knitr opts_current
-submit_lab_btn <- function (label = "Download answers", filename = 'lab_answers.md') {
+submit_lab_btn <- function (label = "Download answers",
+                            filename = 'lab_answers.md',
+                            require_validation = TRUE,
+                            render_html = FALSE) {
+  if (isTRUE(require_validation) && isTRUE(render_html)) {
+    stop("HTML output is not supported if validation is required")
+  }
+
   submit_lab <- list(
     label = label,
-    filename = filename
+    filename = filename,
+    require_validation = isTRUE(require_validation),
+    render_html = isTRUE(render_html)
   )
 
   class(submit_lab) <- 'submit_lab_btn'
@@ -195,12 +207,18 @@ knit_print.submit_lab_btn <- function (x, ...) {
   global_session <- getDefaultReactiveDomain()
 
   moduleServer(options$id, function (input, output, session) {
-    keypair <- getOption('stat305templates.lab.keypair') %||% ec_keygen()
+    if (options$require_validation) {
+      keypair <- getOption('stat305templates.lab.keypair') %||% ec_keygen()
+    }
+
     url <- isolate(sprintf('%s//%s%s%s', session$clientData$url_protocol, session$clientData$url_hostname,
                            session$clientData$url_pathname, session$clientData$url_search))
 
     output$download <- downloadHandler(filename = options$filename, content = function (fname) {
-      fh <- file(fname, open = 'w', encoding = 'UTF-8')
+      # Create the markdown file.
+      md_fname <- tempfile(fileext = 'md')
+      on.exit(unlink(md_fname), add = TRUE)
+      fh <- file(md_fname, open = 'w', encoding = 'UTF-8')
       on.exit(close(fh), add = TRUE)
 
       student_name <- isolate(input[['student-name']])
@@ -247,16 +265,25 @@ knit_print.submit_lab_btn <- function (x, ...) {
       rendered_inputs <- rendered_inputs[order(sapply(rendered_inputs, `[[`, 'name'))]
 
       metadata_hash <- .create_metadata_hash(list(student_name = student_name, student_id = student_id, url = url))
-      metadata <- paste('---\nstudent: ', student_name,
-                        '\nstudent_id: ', student_id,
-                        '\nurl: ', url,
-                        '\npubkey: ', base64_encode(write_der(keypair$pubkey)),
-                        '\nsignature: ', base64_encode(signature_create(metadata_hash, hash = NULL, key = keypair)),
-                        ';', sep = '')
-      signature_pos <- nchar(metadata)
 
-      # Leave enough room for the signature.
-      cat(metadata, rep(' ', 120), '\n---\n', file = fh, sep = '')
+      if (options$require_validation) {
+        metadata <- paste('---\nstudent: ', student_name,
+                          '\nstudent_id: ', student_id,
+                          '\nurl: ', url,
+                          '\npubkey: ', base64_encode(write_der(keypair$pubkey)),
+                          '\nsignature: ', base64_encode(signature_create(metadata_hash, hash = NULL, key = keypair)),
+                          ';', sep = '')
+        signature_pos <- nchar(metadata)
+
+        # Leave enough room for the signature.
+        cat(metadata, rep(' ', 120), '\n---\n', file = fh, sep = '')
+      } else {
+        cat('---\ntitle: ',
+            sprintf("Lab Answers for *%s* (%s)", student_name, student_id),
+            '\nauthor: ', url,
+            '\n---\n\n',
+            file = fh, sep = '')
+      }
       cat('# Answers\n', file = fh)
       running_hash <- NULL
       for (input in rendered_inputs) {
@@ -264,9 +291,29 @@ knit_print.submit_lab_btn <- function (x, ...) {
       }
       running_hash <- .digest_cat(prev = running_hash, file = fh, finalize = TRUE)
 
-      # Re-position at the site of the signature
-      seek(fh, where = signature_pos, origin = 'start', rw = 'w')
-      cat(base64_encode(signature_create(running_hash$hash, hash = NULL, key = keypair)), file = fh, sep = '')
+      if (options$require_validation) {
+        # Re-position at the site of the signature
+        seek(fh, where = signature_pos, origin = 'start', rw = 'w')
+        cat(base64_encode(signature_create(running_hash$hash, hash = NULL, key = keypair)), file = fh, sep = '')
+      }
+
+      if (options$render_html) {
+        out_dir <- tempfile('rmarkdown-out')
+        dir.create(out_dir, showWarnings = FALSE, mode = '0700')
+        on.exit(unlink(out_dir, recursive = TRUE), add = TRUE)
+
+        rendered_file <- render(
+          md_fname,
+          output_file = 'rendered.html',
+          output_format = html_document(self_contained = TRUE),
+          output_dir = out_dir,
+          envir = new.env(),
+          quiet = TRUE)
+
+        file.rename(rendered_file, fname)
+      } else {
+        file.rename(md_fname, fname)
+      }
     }, contentType = 'application/octet-stream')
   })
 
